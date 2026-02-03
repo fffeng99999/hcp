@@ -309,7 +309,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 ## 📧 Contact
 
-- Author: Zheng Linfen (郑琳峰)
+- Author: 
 - GitHub: [@fffeng99999](https://github.com/fffeng99999)
 - Email: [To be updated]
 
