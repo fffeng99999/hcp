@@ -6,7 +6,7 @@
 
 根据你的毕业设计文档和现有的7个仓库分析,HCP-Bench项目是一个高频金融交易下的区块链共识性能界限研究系统。
 
-### 七个HCP仓库结构:
+### 六个HCP仓库结构:
 
 1. **hcp** - 主仓库(文档中心)
 2. **hcp-ui** - Vue3前端界面 
@@ -109,31 +109,7 @@ pub struct TransactionIngestion {
 - 支持0-25k TPS负载
 - 内存队列深度: 10万笔交易
 
-#### **3. 存储抽象层** (新建 hcp-storage)
-
-```go
-// storage/
-storage/
-├── interface.go        # 存储接口定义
-├── leveldb/            # LevelDB实现
-│   ├── adapter.go      # 适配器
-│   └── benchmark.go    # 性能测试
-├── rocksdb/            # RocksDB实现
-│   ├── adapter.go
-│   └── tuning.go       # 参数调优
-├── mempool/            # 内存池
-│   └── lru_cache.go    # LRU缓存
-└── metrics/
-    └── latency.go      # 读写延迟统计
-```
-
-**性能目标**:
-- 读延迟 <5ms
-- 写延迟 <10ms
-- 一键切换LevelDB/RocksDB
-- 增量备份支持
-
-#### **4. 性能监控系统** (hcp-consensus + hcp-gateway)
+#### **3. 性能监控系统** (hcp-consensus + hcp-gateway)
 
 ```yaml
 # prometheus.yml (需扩展)
@@ -156,38 +132,6 @@ scrape_configs:
 - 延迟分布直方图(P50/P99/P999)
 - 节点拓扑图
 - 资源使用热力图
-
-#### **5. 压力测试工具** (新建 hcp-loadgen)
-
-```go
-// cmd/loadgen/main.go
-func main() {
-    // JMeter风格的负载生成器
-    - 支持恒定速率/阶梯式/脉冲式负载
-    - 0-25k TPS连续可调 (步长1k)
-    - 批量交易生成 (100-10000笔/批)
-    - 签名交易生成 (ECDSA)
-    - 实时统计成功率/失败率
-}
-```
-
-**测试场景**:
-```yaml
-# loadgen-config.yaml
-scenarios:
-  - name: "baseline"
-    tps: [1000, 5000, 10000, 15000, 20000, 25000]
-    duration: 300s  # 每档5分钟
-    
-  - name: "stress"
-    tps: [30000, 35000, 40000]  # 超负荷测试
-    duration: 60s
-    
-  - name: "spike"
-    pattern: "burst"  # 脉冲式
-    peak_tps: 50000
-    duration: 10s
-```
 
 ***
 
