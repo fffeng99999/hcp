@@ -150,7 +150,7 @@ hcp-server/
 ## 📦 核心依赖 (go.mod)
 
 ```go
-module github.com/hcp-bench/hcp-server
+module github.com/fffeng99999/hcp-server
 
 go 1.22
 
@@ -573,7 +573,7 @@ CREATE TRIGGER update_anomalies_updated_at
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/hcp-bench/hcp-server.git
+git clone https://github.com/fffeng99999/hcp-server.git
 cd hcp-server
 
 # 2. 安装依赖
