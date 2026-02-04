@@ -3,7 +3,7 @@
 ## 📋 项目概述
 
 **项目名称**: hcp-server  
-**技术栈**: Go 1.22 + gRPC + PostgreSQL + Redis + GORM  
+**技术栈**: Go 1.25 + gRPC + PostgreSQL + Redis + GORM  
 **启动端口**: 8081 (gRPC服务)  
 **职责**: 数据持久化、基准管理、性能统计、缓存管理
 
