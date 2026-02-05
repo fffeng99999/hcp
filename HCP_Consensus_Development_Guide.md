@@ -4,7 +4,7 @@
 
 - **项目名称**: HCP-Consensus (高频金融交易区块链共识性能测试系统 - 共识层)
 - **技术栈**: Cosmos SDK v0.50.3 + CometBFT v0.38.2 + 嵌入式RocksDB
-- **开发语言**: Go 1.22+
+- **开发语言**: Go 1.25+
 - **共识算法**: tPBFT (Trust-enhanced PBFT)
 - **文档版本**: v1.0
 - **最后更新**: 2026-02-05
