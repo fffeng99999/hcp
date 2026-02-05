@@ -217,10 +217,14 @@ hcp-consensus/
 ├── cmd/                          # 命令行工具
 │   └── hcpd/
 │       └── main.go              # 主程序入口
-├── consensus/                    # tPBFT 共识实现
-│   ├── tpbft.go                 # 信任评分与验证者选择
-│   ├── trust_scorer.go          # 信任评分计算器
-│   └── validator_selector.go   # 验证者选择算法
+├── consensus/                    # 共识实现
+│   ├── common        
+│   ├── hotstuff
+│   ├── raft
+│   └── tpbft/
+│       ├── validator_selector.go    # 信任评分与验证者选择
+│       ├── trust_scorer.go         # 信任评分计算器
+│       └── tpbft.go                # tPBFT 共识主逻辑
 ├── configs/                      # 配置文件
 │   ├── tpbft-config.toml        # tPBFT 配置
 │   ├── raft-config.toml         # Raft 配置(对比实验)
