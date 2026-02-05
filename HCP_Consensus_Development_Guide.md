@@ -214,48 +214,52 @@ hcp-consensus/
 ├── app/                          # Cosmos SDK 应用层
 │   ├── app.go                   # 应用初始化与模块配置
 │   └── root.go                  # CLI 根命令定义
+├── build/                        # 构建产物
+│   └── hcpd                     # 可执行文件
 ├── cmd/                          # 命令行工具
 │   └── hcpd/
 │       └── main.go              # 主程序入口
-├── consensus/                    # 共识实现
-│   ├── common        
-│   ├── hotstuff
-│   ├── raft
-│   └── tpbft/
-│       ├── validator_selector.go    # 信任评分与验证者选择
-│       ├── trust_scorer.go         # 信任评分计算器
-│       └── tpbft.go                # tPBFT 共识主逻辑
 ├── configs/                      # 配置文件
-│   ├── tpbft-config.toml        # tPBFT 配置
+│   ├── hotstuff-config.toml     # HotStuff 配置(对比实验)
 │   ├── raft-config.toml         # Raft 配置(对比实验)
-│   └── hotstuff-config.toml     # HotStuff 配置(对比实验)
-├── scripts/                      # 辅助脚本
-│   ├── init-testnet.sh          # 初始化测试网络
-│   ├── benchmark.sh             # 性能测试脚本
-│   ├── compare-consensus.sh     # 共识算法对比
-│   └── monitor.sh               # 监控脚本
-├── testnet/                      # 测试网络数据(运行时生成)
-│   ├── node0/
-│   ├── node1/
-│   ├── node2/
-│   └── node3/
+│   └── tpbft-config.toml        # tPBFT 配置
+├── consensus/                    # 共识实现
+│   ├── common/                  # 通用接口定义
+│   │   └── interface.go         # 共识引擎接口
+│   ├── hotstuff/                # HotStuff 共识实现
+│   │   └── consensus.go         # HotStuff 核心逻辑
+│   ├── raft/                    # Raft 共识实现
+│   │   └── consensus.go         # Raft 核心逻辑
+│   └── tpbft/                   # tPBFT 共识实现
+│       ├── consensus.go         # tPBFT 核心逻辑与引擎集成
+│       ├── message.go           # 共识消息定义
+│       ├── node.go              # 节点状态机实现
+│       ├── node_test.go         # 节点逻辑测试
+│       ├── trust_scorer.go      # 信任评分计算器
+│       ├── trust_scorer_test.go # 信任评分测试
+│       ├── validator_selector.go # 验证者选择逻辑
+│       └── validator_selector_test.go # 验证者选择测试
 ├── docs/                         # 文档
-│   ├── DEPLOYMENT.md            # 部署指南
-│   ├── DEMO.md                  # 演示脚本
-│   └── API.md                   # API文档
-├── mytest/                       # 测试代码
-│   └── benchmark_test.go        # 基准测试
+│   ├── DEMO.md                  # 演示文档
+│   └── DEPLOYMENT.md            # 部署指南
+├── mytest/                       # 本地测试数据与配置
+├── proto/                        # Protobuf 定义
+├── scripts/                      # 辅助脚本
+│   ├── benchmark.py             # 性能测试 Python 脚本
+│   ├── benchmark.sh             # 性能测试 Shell 脚本
+│   ├── compare-consensus.sh     # 共识算法对比脚本
+│   └── init-testnet.sh          # 初始化测试网络脚本
+├── testnet/                      # 测试网络运行数据
 ├── Dockerfile                    # Docker镜像构建
-├── docker-compose.yml           # 多节点编排配置
+├── LICENSE                       # 许可证
 ├── Makefile                      # 构建与管理命令
+├── QUICKSTART.md                 # 快速开始指南
+├── README.md                     # 项目说明
+├── TROUBLESHOOTING.md            # 故障排查指南
+├── docker-compose.yml           # 多节点编排配置
 ├── go.mod                        # Go模块依赖
 ├── go.sum                        # 依赖校验和
-├── .env.example                 # 环境变量示例
-├── prometheus.yml               # Prometheus监控配置
-├── README.md                    # 项目说明
-├── QUICKSTART.md                # 快速开始指南
-├── TROUBLESHOOTING.md           # 故障排查指南
-└── LICENSE                       # Apache 2.0 许可证
+└── prometheus.yml               # Prometheus监控配置
 ```
 
 ### 2.3 技术栈详解
