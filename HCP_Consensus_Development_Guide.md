@@ -303,8 +303,8 @@ hcp-consensus/
 #### 1. Go 语言环境
 
 ```bash
-# 下载 Go 1.22+
-wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
+# 下载 Go 1.25+
+wget https://go.dev/dl/go1.25.0.linux-amd64.tar.gz
 
 # 解压到 /usr/local
 sudo rm -rf /usr/local/go
