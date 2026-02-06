@@ -4,38 +4,24 @@
 PROJECT_ROOT="/home/hcp-dev/hcp-project"
 LOG_DIR="$PROJECT_ROOT/logs"
 PIDS_DIR="$PROJECT_ROOT/pids"
-TIMEOUT=60 # Seconds to wait for service startup
+TIMEOUT=60 # Increased timeout for compilation/builds
 
-# Colors for output
-RED='\033[0;31m'
+# Colors
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Initialize directories
+# Ensure directories exist
 mkdir -p "$LOG_DIR"
 mkdir -p "$PIDS_DIR"
 
-# Helper functions
-log_info() {
-    echo -e "${GREEN}[INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1${NC}"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN] $(date '+%Y-%m-%d %H:%M:%S') - $1${NC}"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1${NC}"
-}
+log_info() { echo -e "${GREEN}[INFO] $1${NC}"; }
+log_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
+log_error() { echo -e "${RED}[ERROR] $1${NC}"; }
 
 check_port() {
-    local port=$1
-    if lsof -i :$port > /dev/null; then
-        return 0
-    else
-        return 1
-    fi
+    lsof -i:$1 -t >/dev/null 2>&1
 }
 
 wait_for_port() {
@@ -60,36 +46,25 @@ wait_for_port() {
             return 1
         fi
 
-        sleep 1
+        sleep 2
     done
 }
 
-stop_service() {
-    local service=$1
-    local pid_file="$PIDS_DIR/$service.pid"
-
-    if [ -f "$pid_file" ]; then
-        local pid=$(cat "$pid_file")
-        if ps -p $pid > /dev/null; then
-            log_warn "Stopping $service (PID: $pid)..."
-            kill $pid
-            # Wait for process to exit
-            tail --pid=$pid -f /dev/null 2>/dev/null || sleep 2
-            log_info "$service stopped."
-        else
-            log_warn "$service PID file exists but process is not running. Cleaning up."
-        fi
-        rm "$pid_file"
-    fi
-}
-
 cleanup() {
-    log_warn "Stopping all services..."
-    stop_service "hcp-ui"
-    stop_service "hcp-gateway"
-    stop_service "hcp-consensus"
-    stop_service "hcp-server"
-    log_info "All services stopped."
+    log_info "Stopping all services..."
+    # Kill processes by PID
+    for pid_file in "$PIDS_DIR"/*.pid; do
+        if [ -f "$pid_file" ]; then
+            pid=$(cat "$pid_file")
+            # Check if process exists before killing
+            if kill -0 $pid 2>/dev/null; then
+                kill $pid
+                log_info "Stopped process $pid"
+            fi
+            rm "$pid_file"
+        fi
+    done
+    exit 0
 }
 
 start_service() {
@@ -101,53 +76,39 @@ start_service() {
     local pid_file="$PIDS_DIR/$service_name.pid"
 
     if check_port $port; then
-        log_warn "Port $port is already in use. Checking if it's $service_name..."
-        # Optional: Check if it's actually our service or something else
-        # For now, we assume if the port is taken, we shouldn't start another instance
-        log_error "Port $port is occupied. Aborting start of $service_name."
-        return 1
+        log_warn "Port $port is already in use. Skipping $service_name start."
+        return 0
     fi
 
     log_info "Starting $service_name..."
-    
     cd "$service_dir" || { log_error "Directory $service_dir not found"; return 1; }
 
     # Run command in background
     nohup $command > "$log_file" 2>&1 &
-    local pid=$!
-    echo $pid > "$pid_file"
+    echo $! > "$pid_file"
 
-    if wait_for_port $port $service_name; then
+    if wait_for_port $port "$service_name"; then
         return 0
     else
         log_error "Failed to start $service_name. Check logs at $log_file"
-        kill $pid 2>/dev/null
         return 1
     fi
 }
 
-# Main startup sequence
 main() {
-    # Trap interrupts for cleanup
     trap cleanup SIGINT SIGTERM
 
     log_info "Starting HCP System..."
 
-    # 0. Check External Dependencies (DB & Redis)
-    # Using nc (netcat) to check connectivity if available, or just warn.
-    # Assuming these are critical.
-    DB_HOST="192.168.58.102"
-    DB_PORT=5432
-    REDIS_PORT=6379
-    
-    log_info "Checking external dependencies..."
+    # 0. Check Dependencies
+    # Check if nc is installed
     if command -v nc >/dev/null 2>&1; then
-        if ! nc -z -w 5 $DB_HOST $DB_PORT; then
-            log_error "Cannot connect to PostgreSQL at $DB_HOST:$DB_PORT"
+        if ! nc -z -w 5 192.168.58.102 5432; then
+            log_error "PostgreSQL (192.168.58.102:5432) is not reachable."
             exit 1
         fi
-        if ! nc -z -w 5 $DB_HOST $REDIS_PORT; then
-            log_error "Cannot connect to Redis at $DB_HOST:$REDIS_PORT"
+        if ! nc -z -w 5 192.168.58.102 6379; then
+            log_error "Redis (192.168.58.102:6379) is not reachable."
             exit 1
         fi
         log_info "External dependencies (PostgreSQL, Redis) are reachable."
@@ -155,48 +116,47 @@ main() {
         log_warn "netcat (nc) not found. Skipping external dependency connectivity check."
     fi
 
-    # 1. Start HCP Server (Backend)
-    # Port 8081
-    if ! start_service "hcp-server" "$PROJECT_ROOT/hcp-server" "go run cmd/server/main.go" 8081; then
-        cleanup
-        exit 1
+    # 1. Start Consensus (Go)
+    # Init if needed
+    if [ ! -f "$HOME/.hcp/config/genesis.json" ]; then
+        log_info "Initializing hcp-consensus..."
+        cd "$PROJECT_ROOT/hcp-consensus" || exit 1
+        # Initialize with chain-id
+        go run cmd/hcpd/main.go init node1 --chain-id hcp-testnet-1 > "$LOG_DIR/consensus_init.log" 2>&1
     fi
-
-    # 2. Start HCP Consensus
-    # Port 26657 (RPC)
-    # Note: Assuming 'init' has been run. If not, this might fail or need init check.
-    # We use 'start' command.
+    # Start consensus node
     if ! start_service "hcp-consensus" "$PROJECT_ROOT/hcp-consensus" "go run cmd/hcpd/main.go start" 26657; then
         cleanup
-        exit 1
     fi
 
-    # 3. Start HCP Gateway
-    # Port 8080
-    if ! start_service "hcp-gateway" "$PROJECT_ROOT/hcp-gateway" "cargo run" 8080; then
+    # 2. Start Server (Go)
+    if ! start_service "hcp-server" "$PROJECT_ROOT/hcp-server" "go run cmd/server/main.go --config configs" 8081; then
         cleanup
-        exit 1
     fi
 
-    # 4. Start HCP UI
-    # Port 5173
+    # 3. Start Gateway (Rust)
+    export HCP_CONSENSUS_GRPC_ADDR="http://127.0.0.1:9090"
+    export HCP_SERVER_GRPC_ADDR="http://127.0.0.1:8081"
+    if ! start_service "hcp-gateway" "$PROJECT_ROOT/hcp-gateway" "cargo run --bin hcp-gateway" 8080; then
+        cleanup
+    fi
+
+    # 4. Start UI (Vue)
     if ! start_service "hcp-ui" "$PROJECT_ROOT/hcp-ui" "npm run dev -- --port 5173 --host" 5173; then
         cleanup
-        exit 1
     fi
 
     log_info "=================================================="
     log_info "HCP System Started Successfully!"
     log_info "UI: http://localhost:5173"
     log_info "Gateway: http://localhost:8080"
-    log_info "Server: http://localhost:8081"
-    log_info "Consensus RPC: http://localhost:26657"
+    log_info "Server (gRPC): localhost:8081"
+    log_info "Consensus (RPC): http://localhost:26657"
     log_info "Logs are available in $LOG_DIR"
     log_info "PIDs are stored in $PIDS_DIR"
-    log_info "Run './stop_hcp.sh' (to be created) or Ctrl+C to stop."
+    log_info "Press Ctrl+C to stop all services."
     log_info "=================================================="
 
-    # Wait indefinitely to keep script running and trap signals
     wait
 }
 
