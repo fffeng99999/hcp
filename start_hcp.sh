@@ -2,6 +2,7 @@
 
 # Configuration
 PROJECT_ROOT="/home/hcp-dev/hcp-project"
+HCP_HOME="$PROJECT_ROOT/.hcp_data"
 LOG_DIR="$PROJECT_ROOT/logs"
 PIDS_DIR="$PROJECT_ROOT/pids"
 TIMEOUT=60 # Increased timeout for compilation/builds
@@ -118,14 +119,29 @@ main() {
 
     # 1. Start Consensus (Go)
     # Init if needed
-    if [ ! -f "$HOME/.hcp/config/genesis.json" ]; then
+    if [ ! -f "$HCP_HOME/config/genesis.json" ]; then
         log_info "Initializing hcp-consensus..."
         cd "$PROJECT_ROOT/hcp-consensus" || exit 1
-        # Initialize with chain-id
-        go run cmd/hcpd/main.go init node1 --chain-id hcp-testnet-1 > "$LOG_DIR/consensus_init.log" 2>&1
+        
+        # 1. Init
+        go run cmd/hcpd/main.go init node1 --chain-id hcp-testnet-1 --home "$HCP_HOME" > "$LOG_DIR/consensus_init.log" 2>&1
+
+        # 2. Add key (validator)
+        go run cmd/hcpd/main.go keys add validator --keyring-backend test --home "$HCP_HOME" --output json > "$HCP_HOME/validator_key.json" 2>&1
+        
+        # 3. Add genesis account
+        # Get address from key
+        VALIDATOR_ADDR=$(go run cmd/hcpd/main.go keys show validator -a --keyring-backend test --home "$HCP_HOME")
+        go run cmd/hcpd/main.go genesis add-genesis-account "$VALIDATOR_ADDR" 1000000000stake --keyring-backend test --home "$HCP_HOME" >> "$LOG_DIR/consensus_init.log" 2>&1
+        
+        # 4. Gentx
+        go run cmd/hcpd/main.go genesis gentx validator 1000000stake --chain-id hcp-testnet-1 --keyring-backend test --home "$HCP_HOME" >> "$LOG_DIR/consensus_init.log" 2>&1
+        
+        # 5. Collect gentxs
+        go run cmd/hcpd/main.go genesis collect-gentxs --home "$HCP_HOME" >> "$LOG_DIR/consensus_init.log" 2>&1
     fi
     # Start consensus node
-    if ! start_service "hcp-consensus" "$PROJECT_ROOT/hcp-consensus" "go run cmd/hcpd/main.go start" 26657; then
+    if ! start_service "hcp-consensus" "$PROJECT_ROOT/hcp-consensus" "go run cmd/hcpd/main.go start --minimum-gas-prices 0stake --home $HCP_HOME" 26657; then
         cleanup
     fi
 
