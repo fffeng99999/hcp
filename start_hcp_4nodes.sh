@@ -79,6 +79,11 @@ init_node() {
     sed -i "s#tcp://127.0.0.1:26657#tcp://127.0.0.1:$rpc_port#g" "$config_file"
     sed -i "s#tcp://0.0.0.0:26656#tcp://0.0.0.0:$p2p_port#g" "$config_file"
     sed -i "s#allow_duplicate_ip = false#allow_duplicate_ip = true#g" "$config_file"
+    sed -i "s#addr_book_strict = true#addr_book_strict = false#g" "$config_file"
+    
+    # pprof port
+    local pprof_port=$((6060 + id))
+    sed -i "s#pprof_laddr = \"localhost:6060\"#pprof_laddr = \"localhost:$pprof_port\"#g" "$config_file"
     
     # Update ports in app.toml (gRPC and API)
     sed -i "s#0.0.0.0:9090#0.0.0.0:$grpc_port#g" "$app_file"
@@ -135,7 +140,7 @@ NODE4_ID=$(get_node_id 4)
 PEERS="${NODE1_ID}@127.0.0.1:26656,${NODE2_ID}@127.0.0.1:26666,${NODE3_ID}@127.0.0.1:26676,${NODE4_ID}@127.0.0.1:26686"
 
 for i in 1 2 3 4; do
-    sed -i "s#persistent_peers = \"\"#persistent_peers = \"$PEERS\"#g" "$DATA_ROOT/node$i/config/config.toml"
+    sed -i "s#persistent_peers = \".*\"#persistent_peers = \"$PEERS\"#g" "$DATA_ROOT/node$i/config/config.toml"
 done
 
 # Start Nodes
