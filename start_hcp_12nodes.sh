@@ -6,7 +6,7 @@ HCP_CONSENSUS_DIR="$PROJECT_ROOT/hcp-consensus"
 DATA_ROOT="$PROJECT_ROOT/.hcp_12nodes"
 LOG_DIR="$PROJECT_ROOT/logs/12nodes"
 CHAIN_ID="hcp-testnet-1"
-BINARY="$PROJECT_ROOT/build/hcpd"
+BINARY="$PROJECT_ROOT/hcp-consensus-build/hcpd"
 
 # Colors
 GREEN='\033[0;32m'

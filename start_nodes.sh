@@ -6,7 +6,7 @@ HCP_CONSENSUS_DIR="$PROJECT_ROOT/hcp-consensus"
 DATA_ROOT="${DATA_ROOT:-$PROJECT_ROOT/.hcp_nodes}"
 LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/nodes}"
 CHAIN_ID="hcp-testnet-1"
-BINARY="$PROJECT_ROOT/build/hcpd"
+BINARY="$PROJECT_ROOT/hcp-consensus-build/hcpd"
 NUM_NODES=${1:-4} # Default to 4 nodes
 
 # Colors
