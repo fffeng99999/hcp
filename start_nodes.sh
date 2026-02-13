@@ -81,8 +81,13 @@ init_node() {
     sed -i "s#pprof_laddr = \"localhost:6060\"#pprof_laddr = \"localhost:$pprof_port\"#g" "$config_file"
     
     # Update ports in app.toml (gRPC and API)
+    # Handle both 0.0.0.0 and localhost defaults
     sed -i "s#0.0.0.0:9090#0.0.0.0:$grpc_port#g" "$app_file"
+    sed -i "s#localhost:9090#0.0.0.0:$grpc_port#g" "$app_file"
+    
     sed -i "s#0.0.0.0:1317#0.0.0.0:$api_port#g" "$app_file"
+    sed -i "s#localhost:1317#0.0.0.0:$api_port#g" "$app_file"
+    
     sed -i "s#enable = false#enable = true#g" "$app_file"
 }
 

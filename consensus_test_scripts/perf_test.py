@@ -12,7 +12,7 @@ from statistics import mean, stdev
 
 # Configuration
 NUM_NODES = 12
-TOTAL_TXS = 1000
+TOTAL_TXS = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
 CONCURRENCY = 12  # One thread per node to avoid sequence conflicts
 PROJECT_ROOT = "/home/hcp-dev/hcp-project"
 BINARY = f"{PROJECT_ROOT}/hcp-consensus-build/hcpd"
@@ -110,6 +110,36 @@ class TestRunner:
                 return False
         return True
 
+    def get_account_info(self, node_idx):
+        node = self.nodes[node_idx]
+        api_port = 1317 + (node['id'] - 1)
+        url = f"http://127.0.0.1:{api_port}/cosmos/auth/v1beta1/accounts/{node['address']}"
+        
+        try:
+            res = requests.get(url, timeout=5)
+            if res.status_code == 200:
+                data = res.json()
+                # data['account'] usually contains the info
+                # If it's a BaseAccount, it has account_number and sequence directly
+                # If it's wrapped in Any (common in v0.50), we might need to look inside
+                account = data.get('account', {})
+                
+                # Handle standard BaseAccount or ModuleAccount
+                acc_num = account.get('account_number')
+                seq = account.get('sequence')
+                
+                # If not found directly, check if it's nested (e.g. wrapper)
+                if acc_num is None and 'base_account' in account:
+                    acc_num = account['base_account'].get('account_number')
+                    seq = account['base_account'].get('sequence')
+                
+                return int(acc_num or 0), int(seq or 0)
+            else:
+                print(f"API Error {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f"Error fetching account info via API for node {node['id']}: {e}")
+        return 0, 0
+
     def send_tx(self, from_node_idx, count):
         """
         Sends 'count' transactions from a specific node to the next node.
@@ -118,6 +148,10 @@ class TestRunner:
         sender = self.nodes[from_node_idx]
         receiver = self.nodes[(from_node_idx + 1) % NUM_NODES]
         results = []
+
+        # Fetch initial sequence
+        acc_num, current_seq = self.get_account_info(from_node_idx)
+        print(f"Node {sender['id']} starting with Account: {acc_num}, Seq: {current_seq}")
 
         # Pre-calculate command base
         # We use --broadcast-mode sync to wait for CheckTx but not Commit (faster)
@@ -131,16 +165,20 @@ class TestRunner:
             "--keyring-backend", "test",
             "--output", "json",
             "--yes",
-            "--broadcast-mode", "sync" 
+            "--broadcast-mode", "sync",
+            "--account-number", str(acc_num),
+            "--gas", "200000",
+            "--gas-prices", "0.025stake"
         ]
 
         for i in range(count):
             start_ts = time.time()
             try:
-                # We need to manage sequence manually or let CLI do it. 
-                # CLI is safer but slower due to query. 
-                # For 80 txs per node, CLI overhead is acceptable.
-                res = subprocess.run(cmd_base, capture_output=True, text=True)
+                # Append sequence and unique note
+                seq = current_seq + i
+                cmd = cmd_base + ["--sequence", str(seq), "--note", f"tx-{start_ts}-{seq}"]
+                
+                res = subprocess.run(cmd, capture_output=True, text=True)
                 duration = time.time() - start_ts
                 
                 if res.returncode == 0:
@@ -153,7 +191,8 @@ class TestRunner:
                             'hash': txhash,
                             'duration': duration,
                             'timestamp': start_ts,
-                            'raw': out
+                            'raw': out,
+                            'error': out.get('raw_log', str(code)) if code != 0 else None
                         })
                     except:
                         results.append({'success': False, 'error': 'json_parse_error', 'raw': res.stdout})

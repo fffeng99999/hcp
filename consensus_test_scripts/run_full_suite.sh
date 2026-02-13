@@ -60,7 +60,8 @@ sleep 10
 
 # 3. Run Test
 echo "[3/3] Executing Performance Test Script..."
-if python3 perf_test.py; then
+NUM_TXS=${1:-1000}
+if python3 perf_test.py $NUM_TXS; then
     echo "Test executed successfully."
 else
     echo "Test script failed."
