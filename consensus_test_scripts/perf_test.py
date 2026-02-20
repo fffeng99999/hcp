@@ -11,9 +11,9 @@ from datetime import datetime
 from statistics import mean, stdev
 
 # Configuration
-NUM_NODES = 12
 TOTAL_TXS = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
-CONCURRENCY = 12  # One thread per node to avoid sequence conflicts
+NUM_NODES = int(sys.argv[2]) if len(sys.argv) > 2 else 12
+CONCURRENCY = NUM_NODES  # One thread per node to avoid sequence conflicts
 PROJECT_ROOT = "/home/hcp-dev/hcp-project"
 BINARY = f"{PROJECT_ROOT}/hcp-consensus-build/hcpd"
 DATA_ROOT = f"{PROJECT_ROOT}/.hcp_nodes"

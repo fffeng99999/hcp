@@ -1,4 +1,4 @@
-Initializing 12-node testnet...
+Initializing 16-node testnet...
 [0;32m[INFO] Building hcpd binary...[0m
 [0;32m[INFO] Initializing Node 1...[0m
 [0;32m[INFO] Initializing Node 2...[0m
@@ -12,6 +12,10 @@ Initializing 12-node testnet...
 [0;32m[INFO] Initializing Node 10...[0m
 [0;32m[INFO] Initializing Node 11...[0m
 [0;32m[INFO] Initializing Node 12...[0m
+[0;32m[INFO] Initializing Node 13...[0m
+[0;32m[INFO] Initializing Node 14...[0m
+[0;32m[INFO] Initializing Node 15...[0m
+[0;32m[INFO] Initializing Node 16...[0m
 [0;32m[INFO] Collecting GenTXs...[0m
 [0;32m[INFO] Adding other nodes' accounts to node1 genesis...[0m
 [0;32m[INFO] Distributing genesis.json...[0m
@@ -28,5 +32,9 @@ Initializing 12-node testnet...
 [0;32m[INFO] Starting Node 10...[0m
 [0;32m[INFO] Starting Node 11...[0m
 [0;32m[INFO] Starting Node 12...[0m
-[0;32m[INFO] All 12 nodes started. Logs in /home/hcp-dev/hcp-project/logs/nodes[0m
+[0;32m[INFO] Starting Node 13...[0m
+[0;32m[INFO] Starting Node 14...[0m
+[0;32m[INFO] Starting Node 15...[0m
+[0;32m[INFO] Starting Node 16...[0m
+[0;32m[INFO] All 16 nodes started. Logs in /home/hcp-dev/hcp-project/logs/nodes[0m
 [0;32m[INFO] Tail logs with: tail -f /home/hcp-dev/hcp-project/logs/nodes/node*.log[0m
