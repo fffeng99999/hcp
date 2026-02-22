@@ -50,6 +50,7 @@ init_node() {
     local grpc_port=$((9090 + (id-1)*2))
     local api_port=$((1317 + id - 1))
     local pprof_port=$((6060 + id))
+    local metrics_port=$((26660 + id - 1))
     
     local node_dir="$DATA_ROOT/node$id"
     
@@ -79,6 +80,8 @@ init_node() {
     sed -i "s#allow_duplicate_ip = false#allow_duplicate_ip = true#g" "$config_file"
     sed -i "s#addr_book_strict = true#addr_book_strict = false#g" "$config_file"
     sed -i "s#pprof_laddr = \"localhost:6060\"#pprof_laddr = \"localhost:$pprof_port\"#g" "$config_file"
+    sed -i "s#prometheus = false#prometheus = true#g" "$config_file"
+    sed -i "s#prometheus_listen_addr = \":26660\"#prometheus_listen_addr = \":$metrics_port\"#g" "$config_file"
     
     # Update ports in app.toml (gRPC and API)
     # Handle both 0.0.0.0 and localhost defaults

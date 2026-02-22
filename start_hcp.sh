@@ -142,12 +142,18 @@ main() {
         cleanup
     fi
 
+    if ! start_service "hcp-monitoring" "$PROJECT_ROOT/hcp" "bash start_monitoring.sh" 9090; then
+        cleanup
+    fi
+
     log_info "=================================================="
     log_info "HCP System Started Successfully!"
     log_info "UI: http://localhost:5173"
     log_info "Gateway: http://localhost:8080"
     log_info "Server (gRPC): localhost:8081"
     log_info "Consensus (RPC): http://localhost:26657"
+    log_info "Prometheus: http://localhost:9090"
+    log_info "Grafana: http://localhost:3001"
     log_info "Logs are available in $LOG_DIR"
     log_info "PIDs are stored in $PIDS_DIR"
     log_info "Press Ctrl+C to stop all services."
