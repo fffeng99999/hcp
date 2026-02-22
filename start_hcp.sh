@@ -25,10 +25,32 @@ check_port() {
     lsof -i:$1 -t >/dev/null 2>&1
 }
 
+kill_port_process() {
+    local port=$1
+    local pids
+    pids=$(lsof -i:$port -t 2>/dev/null || true)
+    if [ -z "$pids" ]; then
+        return 0
+    fi
+    log_warn "Port $port is in use. Stopping process(es): $pids"
+    for pid in $pids; do
+        if kill -0 $pid 2>/dev/null; then
+            kill $pid
+        fi
+    done
+    sleep 1
+    pids=$(lsof -i:$port -t 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+        log_error "Port $port still in use after termination: $pids"
+        return 1
+    fi
+    return 0
+}
+
 wait_for_port() {
     local port=$1
     local service=$2
-    local timeout=$TIMEOUT
+    local timeout=${3:-$TIMEOUT}
     local start_time=$(date +%s)
 
     log_info "Waiting for $service to start on port $port..."
@@ -68,17 +90,46 @@ cleanup() {
     exit 0
 }
 
+wait_for_monitoring() {
+    local monitoring_dir=$1
+    local timeout=${2:-$TIMEOUT}
+    local start_time=$(date +%s)
+
+    log_info "Waiting for hcp-monitoring containers to be running..."
+
+    while true; do
+        local running
+        running=$(cd "$monitoring_dir" && docker compose ps --status running --services 2>/dev/null | tr '\n' ' ')
+        if [[ "$running" == *"prometheus"* && "$running" == *"grafana"* ]]; then
+            log_info "hcp-monitoring containers are running."
+            return 0
+        fi
+
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+
+        if [ $elapsed -ge $timeout ]; then
+            log_error "Timeout waiting for hcp-monitoring containers to be running."
+            return 1
+        fi
+
+        sleep 2
+    done
+}
+
 start_service() {
     local service_name=$1
     local service_dir=$2
     local command=$3
     local port=$4
+    local timeout=${5:-$TIMEOUT}
     local log_file="$LOG_DIR/$service_name.log"
     local pid_file="$PIDS_DIR/$service_name.pid"
 
     if check_port $port; then
-        log_warn "Port $port is already in use. Skipping $service_name start."
-        return 0
+        if ! kill_port_process $port; then
+            return 1
+        fi
     fi
 
     log_info "Starting $service_name..."
@@ -88,7 +139,41 @@ start_service() {
     nohup $command > "$log_file" 2>&1 &
     echo $! > "$pid_file"
 
-    if wait_for_port $port "$service_name"; then
+    if wait_for_port $port "$service_name" "$timeout"; then
+        return 0
+    else
+        log_error "Failed to start $service_name. Check logs at $log_file"
+        return 1
+    fi
+}
+
+start_monitoring_service() {
+    local service_name="hcp-monitoring"
+    local service_dir="$PROJECT_ROOT/hcp"
+    local monitoring_dir="$PROJECT_ROOT/hcp-deploy/monitoring"
+    local command="bash start_monitoring.sh"
+    local log_file="$LOG_DIR/$service_name.log"
+    local pid_file="$PIDS_DIR/$service_name.pid"
+    local timeout=${1:-180}
+
+    if check_port 9090; then
+        if ! kill_port_process 9090; then
+            return 1
+        fi
+    fi
+    if check_port 3001; then
+        if ! kill_port_process 3001; then
+            return 1
+        fi
+    fi
+
+    log_info "Starting $service_name..."
+    cd "$service_dir" || { log_error "Directory $service_dir not found"; return 1; }
+
+    nohup $command > "$log_file" 2>&1 &
+    echo $! > "$pid_file"
+
+    if wait_for_monitoring "$monitoring_dir" "$timeout"; then
         return 0
     else
         log_error "Failed to start $service_name. Check logs at $log_file"
@@ -142,7 +227,7 @@ main() {
         cleanup
     fi
 
-    if ! start_service "hcp-monitoring" "$PROJECT_ROOT/hcp" "bash start_monitoring.sh" 9090; then
+    if ! start_monitoring_service 180; then
         cleanup
     fi
 
