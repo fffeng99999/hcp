@@ -6,6 +6,7 @@ HCP_HOME="$PROJECT_ROOT/.hcp_data"
 LOG_DIR="$PROJECT_ROOT/logs"
 PIDS_DIR="$PROJECT_ROOT/pids"
 TIMEOUT=60 # Increased timeout for compilation/builds
+NUM_NODES=8
 
 # Colors
 GREEN='\033[0;32m'
@@ -205,7 +206,6 @@ main() {
     # 1. Start Consensus (Go)
     # Use dedicated node startup script
     # Default to 4 nodes, configurable via NUM_NODES env var
-    NUM_NODES=${NUM_NODES:-4}
     if ! start_service "hcp-nodes" "$PROJECT_ROOT/hcp" "bash start_nodes.sh $NUM_NODES" 26657; then
         cleanup
     fi

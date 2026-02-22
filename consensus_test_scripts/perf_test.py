@@ -9,19 +9,89 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from statistics import mean, stdev
+import socket
 
 # Configuration
-TOTAL_TXS = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
-NUM_NODES = int(sys.argv[2]) if len(sys.argv) > 2 else 12
-CONCURRENCY = NUM_NODES  # One thread per node to avoid sequence conflicts
+DEFAULT_TXS_LIST = [100, 1000, 10000]
+DEFAULT_NODE_LIST = [3, 4, 6, 8, 10, 16]
+DEFAULT_ALGO_LABEL = "default"
 PROJECT_ROOT = "/home/hcp-dev/hcp-project"
 BINARY = f"{PROJECT_ROOT}/hcp-consensus-build/hcpd"
 DATA_ROOT = f"{PROJECT_ROOT}/.hcp_nodes"
 LOG_DIR = f"{PROJECT_ROOT}/logs/consensus_test"
-REPORT_FILE = os.path.join(os.getcwd(), "consensus_perf_report.md")
+SETUP_SCRIPT = f"{PROJECT_ROOT}/hcp/consensus_test_scripts/setup_testnet.sh"
 
 # Ensure paths
 os.makedirs(LOG_DIR, exist_ok=True)
+
+
+def build_report_filename(num_nodes: int, total_txs: int, algo_label: str) -> str:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"consensus_perf_report_nodes{num_nodes}_tx{total_txs}_algo-{algo_label}_{timestamp}.md"
+    return os.path.join(LOG_DIR, filename)
+
+
+def wait_for_ports(num_nodes: int, timeout_sec: int = 120) -> bool:
+    deadline = time.time() + timeout_sec
+    last_rpc_port = 26657 + (num_nodes - 1) * 10
+    while time.time() < deadline:
+        ok_first = False
+        ok_last = False
+        for port in (26657, last_rpc_port):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                result = s.connect_ex(("127.0.0.1", port))
+                if port == 26657:
+                    ok_first = result == 0
+                else:
+                    ok_last = result == 0
+        if ok_first and ok_last:
+            return True
+        time.sleep(2)
+    return False
+
+
+def wait_for_network_ready(num_nodes: int, timeout_sec: int = 180) -> bool:
+    deadline = time.time() + timeout_sec
+    last_rpc_port = 26657 + (num_nodes - 1) * 10
+    while time.time() < deadline:
+        try:
+            resp1 = requests.get("http://127.0.0.1:26657/status", timeout=3)
+            resp2 = requests.get(f"http://127.0.0.1:{last_rpc_port}/status", timeout=3)
+            if resp1.status_code == 200 and resp2.status_code == 200:
+                h1 = int(resp1.json()["result"]["sync_info"]["latest_block_height"])
+                h2 = int(resp2.json()["result"]["sync_info"]["latest_block_height"])
+                if h1 >= 1 and h2 >= 1:
+                    return True
+        except Exception:
+            pass
+        time.sleep(2)
+    return False
+
+
+def start_network(num_nodes: int):
+    log_path = os.path.join(LOG_DIR, f"network_nodes{num_nodes}.log")
+    log_file = open(log_path, "w")
+    proc = subprocess.Popen(
+        ["bash", SETUP_SCRIPT, str(num_nodes)],
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+    )
+    return proc, log_file
+
+
+def stop_network(proc, log_file):
+    try:
+        subprocess.run(["pkill", "-f", "hcpd"], check=False)
+    finally:
+        if proc and proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+        if log_file:
+            log_file.close()
 
 class SystemMonitor:
     def __init__(self):
@@ -67,7 +137,11 @@ class SystemMonitor:
             time.sleep(1)
 
 class TestRunner:
-    def __init__(self):
+    def __init__(self, total_txs: int, num_nodes: int, report_file: str, algo_label: str):
+        self.total_txs = total_txs
+        self.num_nodes = num_nodes
+        self.report_file = report_file
+        self.algo_label = algo_label
         self.nodes = []
         self.monitor = SystemMonitor()
         self.tx_results = []
@@ -77,7 +151,7 @@ class TestRunner:
     def load_node_info(self):
         self.nodes = []
         print("Loading node information...")
-        for i in range(1, NUM_NODES + 1):
+        for i in range(1, self.num_nodes + 1):
             addr_file = f"{DATA_ROOT}/node{i}/address"
             if os.path.exists(addr_file):
                 with open(addr_file, 'r') as f:
@@ -92,6 +166,9 @@ class TestRunner:
 
     def check_network_health(self):
         print("Checking network health...")
+        if not self.nodes:
+            print("No nodes loaded.")
+            return False
         # Check node 1 and node 12
         for node in [self.nodes[0], self.nodes[-1]]:
             try:
@@ -138,6 +215,34 @@ class TestRunner:
                 print(f"API Error {res.status_code}: {res.text}")
         except Exception as e:
             print(f"Error fetching account info via API for node {node['id']}: {e}")
+        try:
+            cmd = [
+                BINARY,
+                "query",
+                "auth",
+                "account",
+                node["address"],
+                "--node",
+                node["rpc"],
+                "--home",
+                node["home"],
+                "--output",
+                "json",
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode == 0:
+                data = json.loads(res.stdout)
+                account = data.get("account", {})
+                acc_num = account.get("account_number")
+                seq = account.get("sequence")
+                if acc_num is None and "base_account" in account:
+                    acc_num = account["base_account"].get("account_number")
+                    seq = account["base_account"].get("sequence")
+                return int(acc_num or 0), int(seq or 0)
+            else:
+                print(f"CLI Error fetching account info for node {node['id']}: {res.stderr}")
+        except Exception as e:
+            print(f"Error fetching account info via CLI for node {node['id']}: {e}")
         return 0, 0
 
     def send_tx(self, from_node_idx, count):
@@ -146,12 +251,10 @@ class TestRunner:
         Using subprocess to call hcpd.
         """
         sender = self.nodes[from_node_idx]
-        receiver = self.nodes[(from_node_idx + 1) % NUM_NODES]
+        receiver = self.nodes[(from_node_idx + 1) % self.num_nodes]
         results = []
 
-        # Fetch initial sequence
-        acc_num, current_seq = self.get_account_info(from_node_idx)
-        print(f"Node {sender['id']} starting with Account: {acc_num}, Seq: {current_seq}")
+        print(f"Node {sender['id']} starting tx submissions")
 
         # Pre-calculate command base
         # We use --broadcast-mode sync to wait for CheckTx but not Commit (faster)
@@ -166,7 +269,6 @@ class TestRunner:
             "--output", "json",
             "--yes",
             "--broadcast-mode", "sync",
-            "--account-number", str(acc_num),
             "--gas", "200000",
             "--gas-prices", "0.025stake"
         ]
@@ -175,8 +277,7 @@ class TestRunner:
             start_ts = time.time()
             try:
                 # Append sequence and unique note
-                seq = current_seq + i
-                cmd = cmd_base + ["--sequence", str(seq), "--note", f"tx-{start_ts}-{seq}"]
+                cmd = cmd_base + ["--note", f"tx-{start_ts}-{i}"]
                 
                 res = subprocess.run(cmd, capture_output=True, text=True)
                 duration = time.time() - start_ts
@@ -206,16 +307,16 @@ class TestRunner:
         return results
 
     def run_load_test(self):
-        print(f"Starting load test: {TOTAL_TXS} txs across {NUM_NODES} nodes...")
-        txs_per_node = TOTAL_TXS // NUM_NODES
-        remainder = TOTAL_TXS % NUM_NODES
+        print(f"Starting load test: {self.total_txs} txs across {self.num_nodes} nodes...")
+        txs_per_node = self.total_txs // self.num_nodes
+        remainder = self.total_txs % self.num_nodes
         
         self.monitor.start()
         self.start_time = time.time()
         
-        with ThreadPoolExecutor(max_workers=NUM_NODES) as executor:
+        with ThreadPoolExecutor(max_workers=self.num_nodes) as executor:
             futures = []
-            for i in range(NUM_NODES):
+            for i in range(self.num_nodes):
                 count = txs_per_node + (1 if i < remainder else 0)
                 futures.append(executor.submit(self.send_tx, i, count))
             
@@ -272,8 +373,9 @@ class TestRunner:
 
         report = f"""# HCP Consensus Performance Report
 **Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**Nodes:** {NUM_NODES}
-**Total Transactions:** {TOTAL_TXS}
+**Nodes:** {self.num_nodes}
+**Total Transactions:** {self.total_txs}
+**Consensus Algorithm:** {self.algo_label}
 
 ## 1. Executive Summary
 - **Success Rate:** {success_count}/{len(self.tx_results)} ({(success_count/len(self.tx_results))*100:.2f}%)
@@ -319,21 +421,41 @@ class TestRunner:
 - **Optimization:** Increase batch size or use gRPC for higher throughput.
 """
 
-        with open(REPORT_FILE, "w") as f:
+        with open(self.report_file, "w") as f:
             f.write(report)
-        print(f"Report generated at {REPORT_FILE}")
+        print(f"Report generated at {self.report_file}")
 
 if __name__ == "__main__":
-    runner = TestRunner()
-    runner.load_node_info()
-    
-    # Check if nodes are running
-    if not runner.check_network_health():
-        print("Network not ready. Please run 'setup_testnet.sh' first or wait for nodes to sync.")
-        # Optional: Call setup script? 
-        # For safety, we expect the user/wrapper to handle setup.
-        sys.exit(1)
-        
-    runner.load_node_info()
-    runner.run_load_test()
-    runner.generate_report()
+    if len(sys.argv) >= 3:
+        total_txs = int(sys.argv[1])
+        num_nodes = int(sys.argv[2])
+        report_file = build_report_filename(num_nodes, total_txs, DEFAULT_ALGO_LABEL)
+        runner = TestRunner(total_txs, num_nodes, report_file, DEFAULT_ALGO_LABEL)
+        runner.load_node_info()
+        if not runner.check_network_health():
+            print("Network not ready. Please run 'setup_testnet.sh' first or wait for nodes to sync.")
+            sys.exit(1)
+        runner.run_load_test()
+        runner.generate_report()
+    else:
+        for num_nodes in DEFAULT_NODE_LIST:
+            for total_txs in DEFAULT_TXS_LIST:
+                report_file = build_report_filename(num_nodes, total_txs, DEFAULT_ALGO_LABEL)
+                proc, log_file = start_network(num_nodes)
+                if not wait_for_ports(num_nodes):
+                    stop_network(proc, log_file)
+                    print(f"Network not ready for {num_nodes} nodes. Please check {LOG_DIR}/network_nodes{num_nodes}.log")
+                    sys.exit(1)
+                if not wait_for_network_ready(num_nodes):
+                    stop_network(proc, log_file)
+                    print(f"Network not ready for {num_nodes} nodes. Please check {LOG_DIR}/network_nodes{num_nodes}.log")
+                    sys.exit(1)
+                runner = TestRunner(total_txs, num_nodes, report_file, DEFAULT_ALGO_LABEL)
+                runner.load_node_info()
+                if not runner.check_network_health():
+                    stop_network(proc, log_file)
+                    print(f"Network not ready for {num_nodes} nodes. Please check {LOG_DIR}/network_nodes{num_nodes}.log")
+                    sys.exit(1)
+                runner.run_load_test()
+                runner.generate_report()
+                stop_network(proc, log_file)
