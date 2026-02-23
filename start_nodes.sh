@@ -147,7 +147,17 @@ start_node() {
     local id=$1
     local home="$DATA_ROOT/node$id"
     log_info "Starting Node $id..."
-    "$BINARY" start --home "$home" --minimum-gas-prices 0stake > "$LOG_DIR/node$id.log" 2>&1 &
+    
+    # Check if CPU affinity is requested
+    if [ -n "$USE_CPU_AFFINITY" ]; then
+        # Calculate CPU core (0-based)
+        # Using modulo to wrap around available cores if needed
+        local core=$(( (id - 1) % $(nproc) ))
+        log_info "Binding Node $id to CPU core $core"
+        taskset -c "$core" "$BINARY" start --home "$home" --minimum-gas-prices 0stake > "$LOG_DIR/node$id.log" 2>&1 &
+    else
+        "$BINARY" start --home "$home" --minimum-gas-prices 0stake > "$LOG_DIR/node$id.log" 2>&1 &
+    fi
 }
 
 for (( i=1; i<=NUM_NODES; i++ )); do
