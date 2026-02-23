@@ -1,12 +1,14 @@
 #!/bin/bash
 
 # Configuration
-PROJECT_ROOT="/home/hcp-dev/hcp-project"
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+PROJECT_ROOT="$SCRIPT_DIR/.."
 HCP_CONSENSUS_DIR="$PROJECT_ROOT/hcp-consensus"
 DATA_ROOT="${DATA_ROOT:-$PROJECT_ROOT/.hcp_nodes}"
 LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/nodes}"
 CHAIN_ID="hcp-testnet-1"
-BINARY="$PROJECT_ROOT/hcp-consensus-build/hcpd"
+PORT_OFFSET="${PORT_OFFSET:-0}"
+BINARY="${HCPD_BINARY:-$PROJECT_ROOT/hcp-consensus-build/hcpd}"
 NUM_NODES=${1:-4} # Default to 4 nodes
 
 # Colors
@@ -22,7 +24,7 @@ log_error() { echo -e "${RED}[ERROR] $1${NC}"; }
 # Cleanup function
 cleanup() {
     log_info "Stopping all nodes..."
-    pkill -f "$BINARY"
+    pkill -f "$BINARY start"
     exit 0
 }
 
@@ -45,12 +47,12 @@ fi
 
 init_node() {
     local id=$1
-    local rpc_port=$((26657 + (id-1)*10))
-    local p2p_port=$((26656 + (id-1)*10))
-    local grpc_port=$((9090 + (id-1)*2))
-    local api_port=$((1317 + id - 1))
-    local pprof_port=$((6060 + id))
-    local metrics_port=$((26660 + id - 1))
+    local rpc_port=$((26657 + PORT_OFFSET + (id-1)*10))
+    local p2p_port=$((26656 + PORT_OFFSET + (id-1)*10))
+    local grpc_port=$((9090 + PORT_OFFSET + (id-1)*2))
+    local api_port=$((1317 + PORT_OFFSET + id - 1))
+    local pprof_port=$((6060 + PORT_OFFSET + id))
+    local metrics_port=$((26660 + PORT_OFFSET + id - 1))
     
     local node_dir="$DATA_ROOT/node$id"
     
@@ -110,6 +112,20 @@ for (( i=2; i<=NUM_NODES; i++ )); do
     "$BINARY" genesis add-genesis-account "$addr" 1000000000000000000stake --home "$DATA_ROOT/node1"
 done
 
+EXTRA_ACCOUNT_COUNT="${EXTRA_ACCOUNT_COUNT:-100}"
+ACCOUNTS_FILE="$DATA_ROOT/accounts.jsonl"
+if [ "$EXTRA_ACCOUNT_COUNT" -gt 0 ]; then
+    log_info "Creating $EXTRA_ACCOUNT_COUNT loadgen accounts..."
+    : > "$ACCOUNTS_FILE"
+    for (( i=1; i<=EXTRA_ACCOUNT_COUNT; i++ )); do
+        name=$(printf "account%03d" "$i")
+        key_json=$("$BINARY" keys add "$name" --keyring-backend test --home "$DATA_ROOT/node1" --output json 2>/dev/null)
+        addr=$(echo "$key_json" | jq -r .address)
+        echo "{\"name\":\"$name\",\"address\":\"$addr\"}" >> "$ACCOUNTS_FILE"
+        "$BINARY" genesis add-genesis-account "$addr" 100000000000stake --home "$DATA_ROOT/node1"
+    done
+fi
+
 for (( i=2; i<=NUM_NODES; i++ )); do
     cp "$DATA_ROOT/node$i/config/gentx"/*.json "$DATA_ROOT/node1/config/gentx/"
 done
@@ -131,7 +147,7 @@ get_node_id() {
 PEERS=""
 for (( i=1; i<=NUM_NODES; i++ )); do
     NODE_ID=$(get_node_id $i)
-    P2P_PORT=$((26656 + (i-1)*10))
+    P2P_PORT=$((26656 + PORT_OFFSET + (i-1)*10))
     if [ -n "$PEERS" ]; then
         PEERS="${PEERS},"
     fi
