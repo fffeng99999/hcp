@@ -6,9 +6,10 @@ PROJECT_ROOT="$SCRIPT_DIR/.."
 HCP_CONSENSUS_DIR="$PROJECT_ROOT/hcp-consensus"
 DATA_ROOT="${DATA_ROOT:-$PROJECT_ROOT/.hcp_nodes}"
 LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/nodes}"
-CHAIN_ID="hcp-testnet-1"
+CHAIN_ID="${CHAIN_ID:-hcp-testnet-1}"
 PORT_OFFSET="${PORT_OFFSET:-0}"
 BINARY="${HCPD_BINARY:-$PROJECT_ROOT/hcp-consensus-build/hcpd}"
+BUILD_TAGS="${BUILD_TAGS:-rocksdb}"
 NUM_NODES=${1:-4} # Default to 4 nodes
 
 # Colors
@@ -39,7 +40,7 @@ mkdir -p "$(dirname "$BINARY")"
 # Build binary
 log_info "Building hcpd binary..."
 cd "$HCP_CONSENSUS_DIR" || exit 1
-go build -o "$BINARY" cmd/hcpd/main.go
+go build -tags "$BUILD_TAGS" -o "$BINARY" cmd/hcpd/main.go
 if [ $? -ne 0 ]; then
     log_error "Failed to build hcpd"
     exit 1
@@ -163,16 +164,30 @@ start_node() {
     local id=$1
     local home="$DATA_ROOT/node$id"
     log_info "Starting Node $id..."
-    
-    # Check if CPU affinity is requested
+
+    local start_args=("$BINARY" "start" "--home" "$home" "--minimum-gas-prices" "0stake")
+    if [ -n "$CONSENSUS_ENGINE" ]; then
+        start_args+=("--consensus-engine" "$CONSENSUS_ENGINE")
+    fi
+    if [ -n "$MERKLE_TX_COUNT" ]; then
+        start_args+=("--merkle-tx-count" "$MERKLE_TX_COUNT")
+    fi
+    if [ -n "$MERKLE_TX_SIZE" ]; then
+        start_args+=("--merkle-tx-size" "$MERKLE_TX_SIZE")
+    fi
+    if [ -n "$MERKLE_K" ]; then
+        start_args+=("--merkle-k" "$MERKLE_K")
+    fi
+    if [ -n "$MERKLE_REPEAT" ]; then
+        start_args+=("--merkle-repeat" "$MERKLE_REPEAT")
+    fi
+
     if [ -n "$USE_CPU_AFFINITY" ]; then
-        # Calculate CPU core (0-based)
-        # Using modulo to wrap around available cores if needed
         local core=$(( (id - 1) % $(nproc) ))
         log_info "Binding Node $id to CPU core $core"
-        taskset -c "$core" "$BINARY" start --home "$home" --minimum-gas-prices 0stake > "$LOG_DIR/node$id.log" 2>&1 &
+        taskset -c "$core" "${start_args[@]}" > "$LOG_DIR/node$id.log" 2>&1 &
     else
-        "$BINARY" start --home "$home" --minimum-gas-prices 0stake > "$LOG_DIR/node$id.log" 2>&1 &
+        "${start_args[@]}" > "$LOG_DIR/node$id.log" 2>&1 &
     fi
 }
 
