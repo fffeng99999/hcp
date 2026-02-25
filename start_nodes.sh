@@ -193,6 +193,51 @@ start_node() {
     if [ -n "$HIERARCHICAL_PHASE_WEIGHT_OUTER" ]; then
         start_args+=("--hierarchical-phase-weight-outer" "$HIERARCHICAL_PHASE_WEIGHT_OUTER")
     fi
+    if [ -n "$HIERARCHICAL_SIG_ALGO" ]; then
+        start_args+=("--hierarchical-sig-algo" "$HIERARCHICAL_SIG_ALGO")
+    fi
+    if [ -n "$HIERARCHICAL_SIG_GEN_MS" ]; then
+        start_args+=("--hierarchical-sig-gen-ms" "$HIERARCHICAL_SIG_GEN_MS")
+    fi
+    if [ -n "$HIERARCHICAL_SIG_VERIFY_MS" ]; then
+        start_args+=("--hierarchical-sig-verify-ms" "$HIERARCHICAL_SIG_VERIFY_MS")
+    fi
+    if [ -n "$HIERARCHICAL_SIG_AGG_MS" ]; then
+        start_args+=("--hierarchical-sig-agg-ms" "$HIERARCHICAL_SIG_AGG_MS")
+    fi
+    if [ -n "$HIERARCHICAL_OUTER_MODE" ]; then
+        start_args+=("--hierarchical-outer-mode" "$HIERARCHICAL_OUTER_MODE")
+    fi
+    if [ -n "$HIERARCHICAL_OUTER_SIG_ALGO" ]; then
+        start_args+=("--hierarchical-outer-sig-algo" "$HIERARCHICAL_OUTER_SIG_ALGO")
+    fi
+    if [ -n "$HIERARCHICAL_OUTER_SIG_GEN_MS" ]; then
+        start_args+=("--hierarchical-outer-sig-gen-ms" "$HIERARCHICAL_OUTER_SIG_GEN_MS")
+    fi
+    if [ -n "$HIERARCHICAL_OUTER_SIG_VERIFY_MS" ]; then
+        start_args+=("--hierarchical-outer-sig-verify-ms" "$HIERARCHICAL_OUTER_SIG_VERIFY_MS")
+    fi
+    if [ -n "$HIERARCHICAL_OUTER_SIG_AGG_MS" ]; then
+        start_args+=("--hierarchical-outer-sig-agg-ms" "$HIERARCHICAL_OUTER_SIG_AGG_MS")
+    fi
+    if [ -n "$HIERARCHICAL_BATCH_VERIFY" ]; then
+        start_args+=("--hierarchical-batch-verify" "$HIERARCHICAL_BATCH_VERIFY")
+    fi
+    if [ -n "$HIERARCHICAL_BATCH_VERIFY_GAIN" ]; then
+        start_args+=("--hierarchical-batch-verify-gain" "$HIERARCHICAL_BATCH_VERIFY_GAIN")
+    fi
+    if [ -n "$HIERARCHICAL_SIG_GEN_PARALLELISM" ]; then
+        start_args+=("--hierarchical-sig-gen-parallelism" "$HIERARCHICAL_SIG_GEN_PARALLELISM")
+    fi
+    if [ -n "$HIERARCHICAL_SIG_VERIFY_PARALLELISM" ]; then
+        start_args+=("--hierarchical-sig-verify-parallelism" "$HIERARCHICAL_SIG_VERIFY_PARALLELISM")
+    fi
+    if [ -n "$HIERARCHICAL_SIG_AGG_PARALLELISM" ]; then
+        start_args+=("--hierarchical-sig-agg-parallelism" "$HIERARCHICAL_SIG_AGG_PARALLELISM")
+    fi
+    if [ -n "$HIERARCHICAL_BATCH_SIZE" ]; then
+        start_args+=("--hierarchical-batch-size" "$HIERARCHICAL_BATCH_SIZE")
+    fi
     if [ -n "$MERKLE_TX_COUNT" ]; then
         start_args+=("--merkle-tx-count" "$MERKLE_TX_COUNT")
     fi
