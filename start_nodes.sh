@@ -169,6 +169,30 @@ start_node() {
     if [ -n "$CONSENSUS_ENGINE" ]; then
         start_args+=("--consensus-engine" "$CONSENSUS_ENGINE")
     fi
+    if [ -z "$HIERARCHICAL_NODE_COUNT" ]; then
+        HIERARCHICAL_NODE_COUNT="$NUM_NODES"
+    fi
+    if [ -n "$HIERARCHICAL_NODE_COUNT" ]; then
+        start_args+=("--hierarchical-node-count" "$HIERARCHICAL_NODE_COUNT")
+    fi
+    if [ -n "$HIERARCHICAL_GROUP_COUNT" ]; then
+        start_args+=("--hierarchical-group-count" "$HIERARCHICAL_GROUP_COUNT")
+    fi
+    if [ -n "$HIERARCHICAL_GROUP_SIZE" ]; then
+        start_args+=("--hierarchical-group-size" "$HIERARCHICAL_GROUP_SIZE")
+    fi
+    if [ -n "$HIERARCHICAL_MESSAGE_BYTES" ]; then
+        start_args+=("--hierarchical-message-bytes" "$HIERARCHICAL_MESSAGE_BYTES")
+    fi
+    if [ -n "$HIERARCHICAL_BASE_LATENCY_MS" ]; then
+        start_args+=("--hierarchical-base-latency-ms" "$HIERARCHICAL_BASE_LATENCY_MS")
+    fi
+    if [ -n "$HIERARCHICAL_PHASE_WEIGHT_INNER" ]; then
+        start_args+=("--hierarchical-phase-weight-inner" "$HIERARCHICAL_PHASE_WEIGHT_INNER")
+    fi
+    if [ -n "$HIERARCHICAL_PHASE_WEIGHT_OUTER" ]; then
+        start_args+=("--hierarchical-phase-weight-outer" "$HIERARCHICAL_PHASE_WEIGHT_OUTER")
+    fi
     if [ -n "$MERKLE_TX_COUNT" ]; then
         start_args+=("--merkle-tx-count" "$MERKLE_TX_COUNT")
     fi
