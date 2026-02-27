@@ -11,6 +11,8 @@ PORT_OFFSET="${PORT_OFFSET:-0}"
 BINARY="${HCPD_BINARY:-$PROJECT_ROOT/hcp-consensus-build/hcpd}"
 BUILD_TAGS="${BUILD_TAGS:-rocksdb}"
 NUM_NODES=${1:-4} # Default to 4 nodes
+CHECK_ONLY="${CHECK_ONLY:-0}"
+CHECK_TIMEOUT="${CHECK_TIMEOUT:-60}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -21,6 +23,34 @@ NC='\033[0m'
 log_info() { echo -e "${GREEN}[INFO] $1${NC}"; }
 log_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
 log_error() { echo -e "${RED}[ERROR] $1${NC}"; }
+
+check_port() {
+    lsof -i:$1 -t >/dev/null 2>&1
+}
+
+wait_for_port() {
+    local port=$1
+    local service=$2
+    local timeout=$3
+    local start_time=$(date +%s)
+
+    while true; do
+        if check_port "$port"; then
+            log_info "$service started successfully on port $port."
+            return 0
+        fi
+
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+
+        if [ $elapsed -ge $timeout ]; then
+            log_error "Timeout waiting for $service on port $port."
+            return 1
+        fi
+
+        sleep 2
+    done
+}
 
 # Cleanup function
 cleanup() {
@@ -263,6 +293,16 @@ start_node() {
 for (( i=1; i<=NUM_NODES; i++ )); do
     start_node $i
 done
+
+if [ "$CHECK_ONLY" = "1" ]; then
+    local_rpc_port=$((26657 + PORT_OFFSET))
+    if wait_for_port "$local_rpc_port" "hcp-consensus" "$CHECK_TIMEOUT"; then
+        pkill -f "$BINARY start" >/dev/null 2>&1 || true
+        exit 0
+    fi
+    pkill -f "$BINARY start" >/dev/null 2>&1 || true
+    exit 1
+fi
 
 log_info "All $NUM_NODES nodes started. Logs in $LOG_DIR"
 log_info "Tail logs with: tail -f $LOG_DIR/node*.log"

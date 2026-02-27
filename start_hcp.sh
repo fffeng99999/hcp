@@ -182,10 +182,50 @@ start_monitoring_service() {
     fi
 }
 
+check_consensus_startup() {
+    local check_nodes="${CONSENSUS_CHECK_NODES:-1}"
+    if check_port 26657; then
+        log_info "hcp-consensus already running on port 26657."
+        return 0
+    fi
+    if ! CHECK_ONLY=1 CHECK_TIMEOUT="$TIMEOUT" USE_CPU_AFFINITY=1 bash "$PROJECT_ROOT/hcp/start_nodes.sh" "$check_nodes"; then
+        log_error "hcp-consensus startup check failed."
+        return 1
+    fi
+    log_info "hcp-consensus startup check succeeded."
+    return 0
+}
+
+check_loadgen_startup() {
+    local loadgen_dir="$PROJECT_ROOT/hcp-loadgen"
+    local loadgen_bin="${HCP_LOADGEN_BIN:-$loadgen_dir/target/release/hcp-loadgen}"
+    if [ ! -x "$loadgen_bin" ]; then
+        log_warn "hcp-loadgen binary not found. Building..."
+        cd "$loadgen_dir" || { log_error "Directory $loadgen_dir not found"; return 1; }
+        if ! cargo build --release --bin hcp-loadgen; then
+            log_error "hcp-loadgen build failed."
+            return 1
+        fi
+    fi
+    if ! "$loadgen_bin" --help >/dev/null 2>&1; then
+        log_error "hcp-loadgen startup check failed."
+        return 1
+    fi
+    log_info "hcp-loadgen startup check succeeded."
+    return 0
+}
+
 main() {
     trap cleanup SIGINT SIGTERM
 
     log_info "Starting HCP System..."
+
+    if ! check_consensus_startup; then
+        exit 1
+    fi
+    if ! check_loadgen_startup; then
+        exit 1
+    fi
 
     # 0. Check Dependencies
     # Check if nc is installed
@@ -203,26 +243,19 @@ main() {
         log_warn "netcat (nc) not found. Skipping external dependency connectivity check."
     fi
 
-    # 1. Start Consensus (Go)
-    # Use dedicated node startup script
-    # Default to 4 nodes, configurable via NUM_NODES env var
-    if ! start_service "hcp-nodes" "$PROJECT_ROOT/hcp" "bash start_nodes.sh $NUM_NODES" 26657; then
-        cleanup
-    fi
-
-    # 2. Start Server (Go)
+    # 1. Start Server (Go)
     if ! start_service "hcp-server" "$PROJECT_ROOT/hcp-server" "go run cmd/server/main.go --config configs" 8081; then
         cleanup
     fi
 
-    # 3. Start Gateway (Rust)
+    # 2. Start Gateway (Rust)
     export HCP_CONSENSUS_GRPC_ADDR="http://127.0.0.1:9090"
     export HCP_SERVER_GRPC_ADDR="http://127.0.0.1:8081"
     if ! start_service "hcp-gateway" "$PROJECT_ROOT/hcp-gateway" "cargo run --bin hcp-gateway" 8080; then
         cleanup
     fi
 
-    # 4. Start UI (Vue)
+    # 3. Start UI (Vue)
     if ! start_service "hcp-ui" "$PROJECT_ROOT/hcp-ui" "npm run dev -- --port 5173 --host" 5173; then
         cleanup
     fi
