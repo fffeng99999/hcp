@@ -199,6 +199,25 @@ start_node() {
     if [ -n "$CONSENSUS_ENGINE" ]; then
         start_args+=("--consensus-engine" "$CONSENSUS_ENGINE")
     fi
+    if [ "$CONSENSUS_ENGINE" = "votor" ]; then
+        local votor_node_count="${VOTOR_NODE_COUNT:-$NUM_NODES}"
+        start_args+=("--votor-node-count" "$votor_node_count")
+        if [ -n "$VOTOR_SIMULATED_FAULT_RATIO" ]; then
+            start_args+=("--votor-faulty-ratio" "$VOTOR_SIMULATED_FAULT_RATIO")
+        fi
+        if [ -n "$VOTOR_FAST_THRESHOLD" ]; then
+            start_args+=("--votor-fast-threshold" "$VOTOR_FAST_THRESHOLD")
+        fi
+        if [ -n "$VOTOR_SLOW_THRESHOLD" ]; then
+            start_args+=("--votor-slow-threshold" "$VOTOR_SLOW_THRESHOLD")
+        fi
+        if [ -n "$VOTOR_LOCAL_TIMEOUT_MS" ]; then
+            start_args+=("--votor-local-timeout-ms" "$VOTOR_LOCAL_TIMEOUT_MS")
+        fi
+        if [ -n "$VOTOR_BASE_LATENCY_MS" ]; then
+            start_args+=("--votor-base-latency-ms" "$VOTOR_BASE_LATENCY_MS")
+        fi
+    fi
     if [ -z "$HIERARCHICAL_NODE_COUNT" ]; then
         HIERARCHICAL_NODE_COUNT="$NUM_NODES"
     fi
