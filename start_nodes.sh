@@ -10,6 +10,12 @@ CHAIN_ID="${CHAIN_ID:-hcp-testnet-1}"
 PORT_OFFSET="${PORT_OFFSET:-0}"
 BINARY="${HCPD_BINARY:-$PROJECT_ROOT/hcp-consensus-build/hcpd}"
 BUILD_TAGS="${BUILD_TAGS:-rocksdb}"
+COMET_TIMEOUT_PROPOSE="${COMET_TIMEOUT_PROPOSE:-3s}"
+COMET_TIMEOUT_PREVOTE="${COMET_TIMEOUT_PREVOTE:-1s}"
+COMET_TIMEOUT_PRECOMMIT="${COMET_TIMEOUT_PRECOMMIT:-1s}"
+COMET_TIMEOUT_COMMIT="${COMET_TIMEOUT_COMMIT:-5s}"
+COMET_SKIP_TIMEOUT_COMMIT="${COMET_SKIP_TIMEOUT_COMMIT:-false}"
+COMET_MEMPOOL_RECHECK="${COMET_MEMPOOL_RECHECK:-true}"
 NUM_NODES=${1:-4} # Default to 4 nodes
 CHECK_ONLY="${CHECK_ONLY:-0}"
 CHECK_TIMEOUT="${CHECK_TIMEOUT:-60}"
@@ -115,6 +121,12 @@ init_node() {
     sed -i "s#pprof_laddr = \"localhost:6060\"#pprof_laddr = \"localhost:$pprof_port\"#g" "$config_file"
     sed -i "s#prometheus = false#prometheus = true#g" "$config_file"
     sed -i "s#prometheus_listen_addr = \":26660\"#prometheus_listen_addr = \":$metrics_port\"#g" "$config_file"
+    sed -i "s#timeout_propose = \".*\"#timeout_propose = \"$COMET_TIMEOUT_PROPOSE\"#g" "$config_file"
+    sed -i "s#timeout_prevote = \".*\"#timeout_prevote = \"$COMET_TIMEOUT_PREVOTE\"#g" "$config_file"
+    sed -i "s#timeout_precommit = \".*\"#timeout_precommit = \"$COMET_TIMEOUT_PRECOMMIT\"#g" "$config_file"
+    sed -i "s#timeout_commit = \".*\"#timeout_commit = \"$COMET_TIMEOUT_COMMIT\"#g" "$config_file"
+    sed -i "s#skip_timeout_commit = .*#skip_timeout_commit = $COMET_SKIP_TIMEOUT_COMMIT#g" "$config_file"
+    sed -i "s#recheck = .*#recheck = $COMET_MEMPOOL_RECHECK#g" "$config_file"
     
     # Update ports in app.toml (gRPC and API)
     # Handle both 0.0.0.0 and localhost defaults
@@ -198,6 +210,22 @@ start_node() {
     local start_args=("$BINARY" "start" "--home" "$home" "--minimum-gas-prices" "0stake")
     if [ -n "$CONSENSUS_ENGINE" ]; then
         start_args+=("--consensus-engine" "$CONSENSUS_ENGINE")
+    fi
+    if [ "$CONSENSUS_ENGINE" = "pow" ]; then
+        local pow_node_count="${POW_NODE_COUNT:-$NUM_NODES}"
+        start_args+=("--pow-node-count" "$pow_node_count")
+        if [ -n "$POW_DIFFICULTY" ]; then
+            start_args+=("--pow-difficulty" "$POW_DIFFICULTY")
+        fi
+        if [ -n "$POW_TARGET_BLOCK_MS" ]; then
+            start_args+=("--pow-target-block-ms" "$POW_TARGET_BLOCK_MS")
+        fi
+        if [ -n "$POW_TX_PER_BLOCK" ]; then
+            start_args+=("--pow-tx-per-block" "$POW_TX_PER_BLOCK")
+        fi
+        if [ -n "$POW_ORPHAN_BASE_RATE" ]; then
+            start_args+=("--pow-orphan-base-rate" "$POW_ORPHAN_BASE_RATE")
+        fi
     fi
     if [ "$CONSENSUS_ENGINE" = "votor" ]; then
         local votor_node_count="${VOTOR_NODE_COUNT:-$NUM_NODES}"
