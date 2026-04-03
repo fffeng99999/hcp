@@ -246,6 +246,28 @@ start_node() {
             start_args+=("--votor-base-latency-ms" "$VOTOR_BASE_LATENCY_MS")
         fi
     fi
+    if [ "$CONSENSUS_ENGINE" = "ibft" ]; then
+        local ibft_node_count="${IBFT_NODE_COUNT:-$NUM_NODES}"
+        start_args+=("--ibft-node-count" "$ibft_node_count")
+        if [ -n "$IBFT_FAULTY_RATIO" ]; then
+            start_args+=("--ibft-faulty-ratio" "$IBFT_FAULTY_RATIO")
+        fi
+        if [ -n "$IBFT_BASE_LATENCY_MS" ]; then
+            start_args+=("--ibft-base-latency-ms" "$IBFT_BASE_LATENCY_MS")
+        fi
+        if [ -n "$IBFT_JITTER_MS" ]; then
+            start_args+=("--ibft-jitter-ms" "$IBFT_JITTER_MS")
+        fi
+        if [ -n "$IBFT_TIMEOUT_MS" ]; then
+            start_args+=("--ibft-timeout-ms" "$IBFT_TIMEOUT_MS")
+        fi
+        if [ -n "$IBFT_MESSAGE_BYTES" ]; then
+            start_args+=("--ibft-message-bytes" "$IBFT_MESSAGE_BYTES")
+        fi
+        if [ -n "$IBFT_MAX_ROUNDS" ]; then
+            start_args+=("--ibft-max-rounds" "$IBFT_MAX_ROUNDS")
+        fi
+    fi
     if [ -z "$HIERARCHICAL_NODE_COUNT" ]; then
         HIERARCHICAL_NODE_COUNT="$NUM_NODES"
     fi
