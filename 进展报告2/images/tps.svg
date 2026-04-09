@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+<rect width="900" height="520" fill="#ffffff"/>
+<text x="450" y="36" text-anchor="middle" font-size="24" font-family="Arial" fill="#1f2937">当前阶段多算法 TPS 样本曲线</text>
+<text x="450" y="62" text-anchor="middle" font-size="12" font-family="Arial" fill="#6b7280">数据来源：hcp-consensus README、exp5_hierarchical_tpbft、exp8_ibft、exp7_pow 当前实验产物</text>
+<line x1="90" y1="440" x2="840" y2="440" stroke="#111827" stroke-width="2"/>
+<line x1="90" y1="90" x2="90" y2="440" stroke="#111827" stroke-width="2"/>
+<g font-size="12" font-family="Arial" fill="#4b5563">
+<text x="58" y="444">0</text>
+<text x="50" y="394">10</text>
+<text x="50" y="344">20</text>
+<text x="50" y="294">30</text>
+<text x="50" y="244">40</text>
+<text x="50" y="194">50</text>
+<text x="50" y="144">60</text>
+<text x="50" y="94">70</text>
+</g>
+<g stroke="#e5e7eb" stroke-width="1">
+<line x1="90" y1="390" x2="840" y2="390"/>
+<line x1="90" y1="340" x2="840" y2="340"/>
+<line x1="90" y1="290" x2="840" y2="290"/>
+<line x1="90" y1="240" x2="840" y2="240"/>
+<line x1="90" y1="190" x2="840" y2="190"/>
+<line x1="90" y1="140" x2="840" y2="140"/>
+</g>
+<polyline fill="none" stroke="#2563eb" stroke-width="4" points="140,115 260,180 380,250 500,265 620,304 740,440"/>
+<g fill="#2563eb">
+<circle cx="140" cy="115" r="6"/>
+<circle cx="260" cy="180" r="6"/>
+<circle cx="380" cy="250" r="6"/>
+<circle cx="500" cy="265" r="6"/>
+<circle cx="620" cy="304" r="6"/>
+<circle cx="740" cy="440" r="6"/>
+</g>
+<g font-size="12" font-family="Arial" fill="#111827">
+<text x="140" y="102" text-anchor="middle">65.00</text>
+<text x="260" y="167" text-anchor="middle">52.00</text>
+<text x="380" y="237" text-anchor="middle">38.00</text>
+<text x="500" y="252" text-anchor="middle">34.95</text>
+<text x="620" y="291" text-anchor="middle">27.18</text>
+<text x="740" y="427" text-anchor="middle">0.00</text>
+</g>
+<g font-size="12" font-family="Arial" fill="#111827">
+<text x="140" y="468" text-anchor="middle">tPBFT</text>
+<text x="260" y="468" text-anchor="middle">HotStuff</text>
+<text x="380" y="468" text-anchor="middle">Raft</text>
+<text x="500" y="468" text-anchor="middle">IBFT</text>
+<text x="620" y="468" text-anchor="middle">Hier-TPBFT</text>
+<text x="740" y="468" text-anchor="middle">PoW</text>
+</g>
+<text x="25" y="270" transform="rotate(-90 25,270)" text-anchor="middle" font-size="14" font-family="Arial" fill="#111827">TPS</text>
+<text x="465" y="500" text-anchor="middle" font-size="14" font-family="Arial" fill="#111827">算法样本</text>
+</svg>
