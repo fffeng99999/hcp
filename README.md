@@ -6,7 +6,7 @@
 
 ### What is HCP?
 
-HCP (HCP-Bench) is a comprehensive performance evaluation framework designed to:
+HCP is a comprehensive performance evaluation framework and distributed ecosystem designed to:
 
 1. **Analyze Consensus Limits**: Study the performance boundaries of various blockchain consensus algorithms (tPBFT, Raft, HotStuff) when subjected to high-frequency trading workloads
 2. **Benchmark Performance**: Measure throughput (TPS), latency, fault tolerance, and resource consumption across different consensus mechanisms
@@ -24,93 +24,51 @@ HCP (HCP-Bench) is a comprehensive performance evaluation framework designed to:
 - **Workload**: High-frequency financial transactions
 - **Primary Focus**: Consensus algorithm performance and optimization
 
-## 🎯 Project Goals
+## �️ Dual-Mode Architecture
 
-### Research Objectives
+The HCP ecosystem is structured into two distinct operating paradigms, allowing researchers to choose between rapid local prototyping and comprehensive microservice integration.
 
-1. **Identify Performance Boundaries**: Determine the theoretical and practical limits of consensus mechanisms under HFT scenarios
-2. **Comparative Analysis**: Benchmark multiple consensus algorithms with focus on throughput, latency, and fault tolerance
-3. **Optimization Proposals**: Develop and validate optimization strategies that improve consensus performance
-4. **Real-World Applicability**: Bridge the gap between theoretical improvements and practical deployment
+### 1. Small Environment Experimental Testing (Lab Mode)
+Designed for rapid iteration, algorithm benchmarking, and local performance analysis.
+- **[hcp]**: Main project documentation and scripts orchestration.
+- **[hcp-consensus]**: The core consensus engine (tPBFT based on Cosmos-SDK/CometBFT).
+- **[hcp-loadgen]**: High-performance transaction load generator written in Rust.
+- **[hcp-lab]**: Python-based experiment orchestration, metric collection, and analysis.
 
-### Deliverables
-
-- Performance benchmarking framework (HCP-Bench)
-- Frontend visualization dashboard (hcp-ui)
-- Comprehensive performance evaluation reports
-- Optimization algorithm implementations
-- Research findings and academic documentation
-
-## 🏗️ Architecture Overview
+### 2. Large-Scale Integrated System (Production Mode)
+A full-fledged microservices architecture for large-scale deployment, real-time monitoring, and complete system testing. Includes the core engines from the Lab Mode (`hcp`, `hcp-consensus`, `hcp-loadgen`), augmented by:
+- **[hcp-ui]**: Frontend visualization dashboard (Vue 3).
+- **[hcp-server]**: Backend API service for data retrieval and configuration.
+- **[hcp-gateway]**: API gateway service for routing and access control.
+- **[hcp-antimanip]**: Anti-manipulation mechanism module for network security.
+- **[hcp-deploy]**: Deployment configurations and orchestration scripts (Docker/Kubernetes).
 
 ### System Components
 
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                        HCP Project Ecosystem                           │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  [ Large-Scale Integrated System ]       [ Experimental Lab Mode ]     │
+│                                                                        │
+│  ┌────────────┐   ┌────────────┐        ┌────────────┐ ┌────────────┐  │
+│  │   hcp-ui   │◄─►│hcp-gateway │        │  hcp-lab   │ │ hcp-deploy │  │
+│  └────────────┘   └────────────┘        └────────────┘ └────────────┘  │
+│                         ▲                     │              │         │
+│                         ▼                     ▼              ▼         │
+│  ┌────────────┐   ┌────────────┐        ┌────────────┐ ┌────────────┐  │
+│  │hcp-antimanip◄─►│ hcp-server │◄──────►│hcp-loadgen │ │    hcp     │  │
+│  └────────────┘   └────────────┘        └────────────┘ └────────────┘  │
+│                         ▲                     │              │         │
+│                         ▼                     ▼              ▼         │
+│                   ┌────────────┐        ┌────────────┐                 │
+│                   │ Database / │◄──────►│hcp-consensus                 │
+│                   │ Prometheus │        │(tPBFT/Cosmos)                │
+│                   └────────────┘        └────────────┘                 │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
-┌─────────────────────────────────────────────────────┐
-│          HCP Project Ecosystem                       │
-├─────────────────────────────────────────────────────┤
-│                                                       │
-│  ┌──────────────┐      ┌──────────────┐             │
-│  │  Frontend    │      │   Backend    │             │
-│  │  (hcp-ui)    │◄────►│   API        │             │
-│  │              │      │   Service    │             │
-│  └──────────────┘      └──────────────┘             │
-│         ▲                      ▲                     │
-│         │                      │                     │
-│         ▼                      ▼                     │
-│  ┌──────────────┐      ┌──────────────┐             │
-│  │ Visualization│      │ Consensus    │             │
-│  │ & Dashboard  │      │ Engine       │             │
-│  │ (ECharts, D3)│      │ (tPBFT, etc.)│             │
-│  └──────────────┘      └──────────────┘             │
-│         ▲                      ▲                     │
-│         │                      │                     │
-│         ▼                      ▼                     │
-│  ┌──────────────┐      ┌──────────────┐             │
-│  │  Real-time   │      │ Test Nodes   │             │
-│  │  Metrics     │      │ Network      │             │
-│  │  Collection  │      │ (50-200)     │             │
-│  └──────────────┘      └──────────────┘             │
-│                                                       │
-└─────────────────────────────────────────────────────┘
-```
-
-### Modules
-
-#### 1. **Frontend (hcp-ui)**
-- **Framework**: Vue 3 + TypeScript
-- **Build Tool**: Vite
-- **UI Library**: Element Plus
-- **Visualization**: ECharts, D3.js
-- **State Management**: Pinia
-
-**Key Views**:
-- Dashboard: Real-time system overview
-- Consensus: Consensus mechanism visualization and configuration
-- Benchmarks: Benchmark result analysis
-- Metrics: Performance metrics monitoring
-- Node: Node management and status
-- System: System health and statistics
-- Policies: Consensus and network policy configuration
-- Settings: Application preferences
-
-#### 2. **Backend API Service**
-- RESTful API for data retrieval and configuration
-- Real-time metrics collection
-- Consensus engine management
-- Test network orchestration
-
-#### 3. **Consensus Engine**
-- Implementation of multiple consensus algorithms
-- Performance monitoring and profiling
-- Dynamic optimization strategies
-- Fault injection and tolerance testing
-
-#### 4. **Test Network**
-- Configurable node network (50-200 nodes)
-- Network condition simulation
-- Transaction generation and workload simulation
-- Performance metrics collection
 
 ## 📊 Consensus Algorithms Evaluated
 
@@ -132,26 +90,6 @@ HCP (HCP-Bench) is a comprehensive performance evaluation framework designed to:
    - Better scalability
    - Robust under Byzantine conditions
 
-### Advanced Approaches
-
-4. **Leios Protocol**
-   - High-throughput permissionless protocol
-   - Adaptive security model
-   - Pipelined block structure
-   - Near-optimal throughput
-
-5. **DRL-Optimized Consensus**
-   - Deep Reinforcement Learning optimization
-   - Dynamic validator selection
-   - Adaptive parameter tuning
-   - Achieves 60% latency reduction
-   - Reaches 22k TPS with 92% attack tolerance
-
-6. **Hybrid Consensus Mechanisms**
-   - Combining PBFT with Raft
-   - Node rating and grouping strategies
-   - Inter-group and intra-group consensus
-
 ## 📈 Performance Metrics
 
 ### Key Indicators
@@ -168,88 +106,44 @@ HCP (HCP-Bench) is a comprehensive performance evaluation framework designed to:
 
 ## 🔄 Technology Stack
 
-### Frontend
-```json
-{
-  "framework": "Vue 3",
-  "language": "TypeScript",
-  "build": "Vite",
-  "ui": "Element Plus",
-  "visualization": ["ECharts", "D3.js"],
-  "state": "Pinia",
-  "routing": "Vue Router",
-  "http": "Axios"
-}
-```
+The project spans across multiple languages tailored to their specific domains:
 
-### Development Tools
-- **Linting**: ESLint + TypeScript plugin
-- **Formatting**: Prettier
-- **Type Checking**: vue-tsc
-- **Version Control**: Git
-- **CI/CD**: GitHub Actions (to be configured)
+- **Consensus Engine**: Go, Cosmos-SDK, CometBFT
+- **Load Generator**: Rust, Tokio, gRPC/HTTP
+- **Experiment Orchestration**: Python, Pandas, Matplotlib
+- **Frontend (UI)**: Vue 3, TypeScript, Vite, Element Plus, ECharts
+- **Backend Services**: Go / Node.js
+- **Deployment**: Docker, Kubernetes, Shell Scripts
 
 ## 🚀 Getting Started
 
-### Prerequisites
+Because the HCP ecosystem is distributed across multiple repositories, your starting point depends on your testing goals.
 
-- Node.js ≥ 16.x
-- npm or yarn
-- Git
-
-### Installation
+### For Small Environment Experimental Testing (Lab Mode)
 
 ```bash
-# Clone the repository
+# 1. Clone the orchestration and core repos
 git clone https://github.com/fffeng99999/hcp.git
-cd hcp
+git clone https://github.com/fffeng99999/hcp-consensus.git
+git clone https://github.com/fffeng99999/hcp-loadgen.git
+git clone https://github.com/fffeng99999/hcp-lab.git
 
-# Install dependencies for frontend
-cd hcp-ui
-npm install
-
-# Start development server
-npm run dev
+# 2. Follow instructions in hcp-lab to run local experiments
+cd hcp-lab
+pip install -r requirements.txt
+python run_experiment.py
 ```
 
-### Building for Production
+### For Large-Scale Integrated System
 
 ```bash
-# Build the frontend
-cd hcp-ui
-npm run build
+# 1. Clone the deployment repository
+git clone https://github.com/fffeng99999/hcp-deploy.git
+cd hcp-deploy
 
-# Output will be in dist/ directory
-```
-
-## 📁 Repository Structure
-
-```
-hcp/
-├── README.md                    # Main project documentation
-├── ARCHITECTURE.md              # System architecture details
-├── TECHNICAL-ROADMAP.md         # Development and research roadmap
-├── PROJECT-VALUE.md             # Project value and contributions
-├── QUICK-START.md               # Quick start guide
-├── BENCHMARKS.md                # Benchmark methodology and results
-├── docs/                        # Additional documentation
-│   ├── consensus-algorithms/    # Algorithm documentation
-│   ├── api-reference/           # API documentation
-│   ├── deployment/              # Deployment guides
-│   └── research/                # Research papers and findings
-├── hcp-ui/                      # Frontend application
-│   ├── src/
-│   │   ├── components/          # Reusable Vue components
-│   │   ├── views/               # Page components
-│   │   ├── api/                 # API client
-│   │   ├── store/               # Pinia state management
-│   │   ├── router/              # Vue Router configuration
-│   │   ├── types/               # TypeScript type definitions
-│   │   └── utils/               # Utility functions
-│   ├── public/                  # Static assets
-│   └── package.json             # Dependencies
-└── .github/
-    └── workflows/               # CI/CD workflows
+# 2. Use the deployment scripts to spin up the entire ecosystem
+# This will pull and orchestrate hcp-server, hcp-gateway, hcp-ui, etc.
+./start_cluster.sh
 ```
 
 ## 🔬 Research Context
@@ -263,33 +157,15 @@ Blockchain consensus mechanisms face significant challenges when supporting high
 3. **Resource Inefficiency**: Excessive computational and network overhead
 4. **Scalability Issues**: Performance degrades rapidly with node count
 
-### Research Questions
-
-1. What are the theoretical and practical performance boundaries of consensus mechanisms under HFT workloads?
-2. Which optimization strategies (tPBFT, Leios, DRL) are most effective?
-3. How do different consensus algorithms trade off latency, throughput, and fault tolerance?
-4. Can DRL-based dynamic optimization significantly improve consensus performance?
-5. What is the optimal network size and configuration for HFT scenarios?
-
 ### Methodology
 
 The HCP project employs:
 
 1. **Literature Review**: Analysis of 200+ academic publications
-2. **Algorithmic Implementation**: Implementation of multiple consensus variants
-3. **Experimental Evaluation**: Benchmarking with realistic HFT workloads
-4. **Optimization Development**: Proposing and validating enhancements
-5. **Performance Analysis**: Quantifying trade-offs and scalability limits
-
-## 📚 Related Research Areas
-
-- Blockchain consensus mechanisms and their optimizations
-- High-frequency trading on decentralized exchanges
-- Byzantine Fault Tolerance and variants
-- Distributed systems scalability
-- Deep Reinforcement Learning for system optimization
-- Network protocol design for low-latency systems
-- Cryptocurrency market microstructure
+2. **Algorithmic Implementation**: Implementation of multiple consensus variants (e.g., tPBFT via `hcp-consensus`)
+3. **Experimental Evaluation**: Benchmarking with realistic HFT workloads via `hcp-loadgen`
+4. **Optimization Development**: Proposing enhancements like the `hcp-antimanip` module
+5. **Performance Analysis**: Quantifying trade-offs and scalability limits orchestrated by `hcp-lab`
 
 ## 🎓 Academic Context
 
@@ -297,7 +173,6 @@ The HCP project employs:
 - **Department**: School of Computer Science
 - **Project Type**: Undergraduate Graduate Thesis
 - **Duration**: 18 weeks (planned)
-- **Advisor**: [Advisor Name]
 
 ## 🤝 Contributing
 
@@ -309,16 +184,20 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 ## 📧 Contact
 
-- Author: 
 - GitHub: [@fffeng99999](https://github.com/fffeng99999)
-- Email: [To be updated]
 
-## 🔗 Related Repositories
+## 🔗 Ecosystem Repositories
 
+The HCP project is modularized into the following repositories based on functionality:
+
+### Small Environment Experimental Testing
 - [hcp](https://github.com/fffeng99999/hcp) - Main project documentation and scripts orchestration
 - [hcp-consensus](https://github.com/fffeng99999/hcp-consensus) - Consensus engine (tPBFT based on Cosmos-SDK/CometBFT)
 - [hcp-loadgen](https://github.com/fffeng99999/hcp-loadgen) - High-performance Rust load generator for transactions
 - [hcp-lab](https://github.com/fffeng99999/hcp-lab) - Python experiment orchestration, monitoring and analysis
+
+### Large-Scale Integrated System
+*(Includes the core testing modules above, plus the following for a complete ecosystem)*
 - [hcp-ui](https://github.com/fffeng99999/hcp-ui) - Frontend visualization dashboard
 - [hcp-server](https://github.com/fffeng99999/hcp-server) - Backend API service
 - [hcp-gateway](https://github.com/fffeng99999/hcp-gateway) - API gateway service
@@ -327,5 +206,5 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 ---
 
-**Last Updated**: February 2026
-**Version**: 1.0.0
+**Last Updated**: April 2026
+**Version**: 1.1.0

@@ -22,7 +22,7 @@
 <line x1="90" y1="100.0" x2="840" y2="100.0"/>
 </g>
 <polyline fill="none" stroke="#dc2626" stroke-width="4" points="120,176.9 214.3,149.3 402.9,181.2 780,204.3"/>
-<polyline fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="8 6" points="120,275.6 214.3,275.9"/>
+<polyline fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="8 6" points="120,278.7 214.3,280.3 402.9,279.6 780,287.6"/>
 <g fill="#dc2626">
 <circle cx="120" cy="176.9" r="6"/>
 <circle cx="214.3" cy="149.3" r="6"/>
@@ -30,16 +30,20 @@
 <circle cx="780" cy="204.3" r="6"/>
 </g>
 <g fill="#2563eb">
-<circle cx="120" cy="275.6" r="6"/>
-<circle cx="214.3" cy="275.9" r="6"/>
+<circle cx="120" cy="278.7" r="6"/>
+<circle cx="214.3" cy="280.3" r="6"/>
+<circle cx="402.9" cy="279.6" r="6"/>
+<circle cx="780" cy="287.6" r="6"/>
 </g>
 <g font-size="12" font-family="Arial" fill="#111827">
 <text x="120" y="164" text-anchor="middle">23.21</text>
 <text x="214.3" y="136" text-anchor="middle">25.65</text>
 <text x="402.9" y="168" text-anchor="middle">22.83</text>
 <text x="780" y="191" text-anchor="middle">20.80</text>
-<text x="120" y="263" text-anchor="middle">14.51</text>
-<text x="214.3" y="263" text-anchor="middle">14.48</text>
+<text x="120" y="266" text-anchor="middle">14.24</text>
+<text x="214.3" y="268" text-anchor="middle">14.09</text>
+<text x="402.9" y="267" text-anchor="middle">14.16</text>
+<text x="780" y="275" text-anchor="middle">13.45</text>
 </g>
 <g font-size="12" font-family="Arial" fill="#111827">
 <text x="120" y="468" text-anchor="middle">4</text>
