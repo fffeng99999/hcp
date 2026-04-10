@@ -315,9 +315,15 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 ## 🔗 Related Repositories
 
-- [hcp-ui](https://github.com/fffeng99999/hcp-ui) - Frontend dashboard
-- [hcp-core](https://github.com/fffeng99999/hcp-core) - Consensus engine (to be created)
-- [hcp-benchmark](https://github.com/fffeng99999/hcp-benchmark) - Benchmarking framework (to be created)
+- [hcp](https://github.com/fffeng99999/hcp) - Main project documentation and scripts orchestration
+- [hcp-consensus](https://github.com/fffeng99999/hcp-consensus) - Consensus engine (tPBFT based on Cosmos-SDK/CometBFT)
+- [hcp-loadgen](https://github.com/fffeng99999/hcp-loadgen) - High-performance Rust load generator for transactions
+- [hcp-lab](https://github.com/fffeng99999/hcp-lab) - Python experiment orchestration, monitoring and analysis
+- [hcp-ui](https://github.com/fffeng99999/hcp-ui) - Frontend visualization dashboard
+- [hcp-server](https://github.com/fffeng99999/hcp-server) - Backend API service
+- [hcp-gateway](https://github.com/fffeng99999/hcp-gateway) - API gateway service
+- [hcp-deploy](https://github.com/fffeng99999/hcp-deploy) - Deployment configurations and scripts
+- [hcp-antimanip](https://github.com/fffeng99999/hcp-antimanip) - Anti-manipulation mechanism module
 
 ---
 
