@@ -7,10 +7,10 @@ set -e
 
 # Configuration
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SERVER_DIR="$PROJECT_ROOT/hcp-lab-server"
+SERVER_DIR="$PROJECT_ROOT/hcp-lab/hcp-lab-server"
 UI_DIR="$PROJECT_ROOT/hcp-ui-lab"
-LOG_DIR="$PROJECT_ROOT/hcp-lab-server/logs"
-PIDS_DIR="$PROJECT_ROOT/hcp-lab-server/pids"
+LOG_DIR="$PROJECT_ROOT/hcp-lab/hcp-lab-server/logs"
+PIDS_DIR="$PROJECT_ROOT/hcp-lab/hcp-lab-server/pids"
 SERVER_PORT=9090
 UI_PORT=5174
 TIMEOUT=30

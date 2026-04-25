@@ -5,8 +5,8 @@
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PIDS_DIR="$PROJECT_ROOT/hcp-lab-server/pids"
-LOG_DIR="$PROJECT_ROOT/hcp-lab-server/logs"
+PIDS_DIR="$PROJECT_ROOT/hcp-lab/hcp-lab-server/pids"
+LOG_DIR="$PROJECT_ROOT/hcp-lab/hcp-lab-server/logs"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
