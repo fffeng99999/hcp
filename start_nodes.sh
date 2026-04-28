@@ -268,6 +268,59 @@ start_node() {
             start_args+=("--ibft-max-rounds" "$IBFT_MAX_ROUNDS")
         fi
     fi
+    if [ "$CONSENSUS_ENGINE" = "hotstuff" ]; then
+        local hotstuff_node_count="${HOTSTUFF_NODE_COUNT:-$NUM_NODES}"
+        start_args+=("--hotstuff-node-count" "$hotstuff_node_count")
+        if [ -n "$HOTSTUFF_FAULTY_RATIO" ]; then
+            start_args+=("--hotstuff-faulty-ratio" "$HOTSTUFF_FAULTY_RATIO")
+        fi
+        if [ -n "$HOTSTUFF_VIEW_TIMEOUT_MS" ]; then
+            start_args+=("--hotstuff-view-timeout-ms" "$HOTSTUFF_VIEW_TIMEOUT_MS")
+        fi
+        if [ -n "$HOTSTUFF_TIMEOUT_EXPONENT" ]; then
+            start_args+=("--hotstuff-timeout-exponent" "$HOTSTUFF_TIMEOUT_EXPONENT")
+        fi
+        if [ -n "$HOTSTUFF_BASE_LATENCY_MS" ]; then
+            start_args+=("--hotstuff-base-latency-ms" "$HOTSTUFF_BASE_LATENCY_MS")
+        fi
+        if [ -n "$HOTSTUFF_JITTER_MS" ]; then
+            start_args+=("--hotstuff-jitter-ms" "$HOTSTUFF_JITTER_MS")
+        fi
+        if [ -n "$HOTSTUFF_MESSAGE_BYTES" ]; then
+            start_args+=("--hotstuff-message-bytes" "$HOTSTUFF_MESSAGE_BYTES")
+        fi
+        if [ -n "$HOTSTUFF_PIPELINE_DEPTH" ]; then
+            start_args+=("--hotstuff-pipeline-depth" "$HOTSTUFF_PIPELINE_DEPTH")
+        fi
+        if [ -n "$HOTSTUFF_ENABLE_THRESHOLD_SIG" ]; then
+            start_args+=("--hotstuff-enable-threshold-sig" "$HOTSTUFF_ENABLE_THRESHOLD_SIG")
+        fi
+    fi
+    if [ "$CONSENSUS_ENGINE" = "raft" ]; then
+        local raft_node_count="${RAFT_NODE_COUNT:-$NUM_NODES}"
+        start_args+=("--raft-node-count" "$raft_node_count")
+        if [ -n "$RAFT_ELECTION_TIMEOUT_MS" ]; then
+            start_args+=("--raft-election-timeout-ms" "$RAFT_ELECTION_TIMEOUT_MS")
+        fi
+        if [ -n "$RAFT_HEARTBEAT_INTERVAL_MS" ]; then
+            start_args+=("--raft-heartbeat-interval-ms" "$RAFT_HEARTBEAT_INTERVAL_MS")
+        fi
+        if [ -n "$RAFT_ELECTION_TIMEOUT_RANGE_MS" ]; then
+            start_args+=("--raft-election-timeout-range-ms" "$RAFT_ELECTION_TIMEOUT_RANGE_MS")
+        fi
+        if [ -n "$RAFT_SNAPSHOT_DISTANCE" ]; then
+            start_args+=("--raft-snapshot-distance" "$RAFT_SNAPSHOT_DISTANCE")
+        fi
+        if [ -n "$RAFT_MAX_LOG_ENTRIES_PER_RPC" ]; then
+            start_args+=("--raft-max-log-entries-per-rpc" "$RAFT_MAX_LOG_ENTRIES_PER_RPC")
+        fi
+        if [ -n "$RAFT_MESSAGE_BYTES" ]; then
+            start_args+=("--raft-message-bytes" "$RAFT_MESSAGE_BYTES")
+        fi
+        if [ -n "$RAFT_FAULTY_RATIO" ]; then
+            start_args+=("--raft-faulty-ratio" "$RAFT_FAULTY_RATIO")
+        fi
+    fi
     if [ -z "$HIERARCHICAL_NODE_COUNT" ]; then
         HIERARCHICAL_NODE_COUNT="$NUM_NODES"
     fi
