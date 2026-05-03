@@ -411,6 +411,21 @@ start_node() {
     if [ -n "$CROSS_GROUP_PENALTY_FACTOR" ]; then
         start_args+=("--cross-group-penalty-factor" "$CROSS_GROUP_PENALTY_FACTOR")
     fi
+    if [ -n "$SUB_CONSENSUS" ]; then
+        start_args+=("--sub-consensus" "$SUB_CONSENSUS")
+    fi
+    if [ -n "$RAFT_HEARTBEAT_MS" ]; then
+        start_args+=("--raft-heartbeat-ms" "$RAFT_HEARTBEAT_MS")
+    fi
+    if [ -n "$RAFT_ELECTION_MS" ]; then
+        start_args+=("--raft-election-ms" "$RAFT_ELECTION_MS")
+    fi
+    if [ -n "$FAULT_INJECT" ]; then
+        start_args+=("--fault-inject" "$FAULT_INJECT")
+    fi
+    if [ -n "$FAULT_AFTER_SEC" ]; then
+        start_args+=("--fault-after-sec" "$FAULT_AFTER_SEC")
+    fi
 
     if [ -n "$USE_CPU_AFFINITY" ]; then
         local core=$(( (id - 1) % $(nproc) ))
