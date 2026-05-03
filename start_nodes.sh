@@ -402,6 +402,15 @@ start_node() {
     if [ -n "$MERKLE_REPEAT" ]; then
         start_args+=("--merkle-repeat" "$MERKLE_REPEAT")
     fi
+    if [ -n "$GROUPING_STRATEGY" ]; then
+        start_args+=("--grouping-strategy" "$GROUPING_STRATEGY")
+    fi
+    if [ -n "$ZIPF_ALPHA" ]; then
+        start_args+=("--zipf-alpha" "$ZIPF_ALPHA")
+    fi
+    if [ -n "$CROSS_GROUP_PENALTY_FACTOR" ]; then
+        start_args+=("--cross-group-penalty-factor" "$CROSS_GROUP_PENALTY_FACTOR")
+    fi
 
     if [ -n "$USE_CPU_AFFINITY" ]; then
         local core=$(( (id - 1) % $(nproc) ))
