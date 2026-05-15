@@ -1,0 +1,1 @@
+{"caption": "图4-6 各算法吞吐量饱和点随节点数变化曲线", "description": "折线图展示PBFT、HotStuff、Raft、CometBFT、tPBFT及分层tPBFT在8、16、32节点下的吞吐量饱和点"}

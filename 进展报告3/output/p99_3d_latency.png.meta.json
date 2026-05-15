@@ -1,0 +1,1 @@
+{"caption": "8/16/32节点下各共识算法P99延迟的三维分布图", "description": "3D散点图展示PBFT、HotStuff、Raft、CometBFT和tPBFT在不同节点规模下的P99尾延迟（毫秒）。"}
