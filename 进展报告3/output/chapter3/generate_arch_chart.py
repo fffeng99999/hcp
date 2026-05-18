@@ -7,7 +7,8 @@ import os
 matplotlib.rcParams['font.sans-serif'] = ['AR PL UMing CN', 'AR PL SungtiL GB', 'Droid Sans Fallback', 'DejaVu Sans']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
-output_dir = '/home/hcp-dev/hcp-project-experiment/hcp/进展报告3/output'
+# 输出到脚本所在目录
+output_dir = os.path.dirname(os.path.abspath(__file__))
 os.makedirs(output_dir, exist_ok=True)
 
 fig, ax = plt.subplots(1, 1, figsize=(14, 10))

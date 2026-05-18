@@ -236,7 +236,8 @@ def create_consensus_hotswap_diagram():
 
 
 if __name__ == '__main__':
-    output_dir = r'f:\hcp-project-experiment\hcp\进展报告3\output'
+    # 输出到脚本所在目录
+    output_dir = os.path.dirname(os.path.abspath(__file__))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     output_path = os.path.join(output_dir, 'fig_consensus_hotswap_architecture.png')
