@@ -1,1 +1,0 @@
-{"caption": "图4-1 不同共识算法TPS随节点数变化曲线", "description": "折线图展示PBFT、HotStuff、Raft、CometBFT、tPBFT在8、16、32节点下的TPS表现"}

@@ -1,1 +1,0 @@
-{"caption": "图4-3 各共识算法TPS退化率对比", "description": "柱状图展示PBFT、HotStuff、Raft、CometBFT、tPBFT从8到32节点的TPS退化率"}

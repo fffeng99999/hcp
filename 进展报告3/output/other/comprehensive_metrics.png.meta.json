@@ -1,1 +1,0 @@
-{"caption": "图4-X 各共识算法性能指标综合对比", "description": "3x2子图展示PBFT、HotStuff、Raft、CometBFT和tPBFT在8/16/32节点下的TPS、P50、P95、P99、CPU、网络带宽六项指标对比。"}
