@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+import json
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -12,6 +13,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 SUMMARY = ROOT / "hcp-lab" / "experiments" / "report" / "summary_all.md"
+EXP1_SUMMARY = ROOT / "hcp-lab" / "experiments" / "exp1_benchmark" / "report" / "summary.json"
 OUT_DIR = Path(__file__).resolve().parent / "chapter3"
 
 ALGO_ORDER = ["PBFT", "HotStuff", "Raft", "CometBFT-light", "tPBFT"]
@@ -22,11 +24,14 @@ COLORS = {
     "CometBFT": "#7F63B8",
     "CometBFT-light": "#9B5B50",
     "tPBFT": "#C44E52",
+    "分层tPBFT": "#7F63B8",
     "A": "#8C8C8C",
     "B": "#5B8DB8",
     "C": "#4E9A62",
     "D": "#D9802E",
 }
+
+BAR_WIDTH_2_3 = 0.8 * 2 / 3
 
 
 def setup_style() -> None:
@@ -43,7 +48,7 @@ def setup_style() -> None:
             "figure.facecolor": "white",
             "savefig.facecolor": "white",
             "axes.edgecolor": "#333333",
-            "axes.grid": True,
+            "axes.grid": False,
             "grid.color": "#DDDDDD",
             "grid.linestyle": "--",
             "grid.linewidth": 0.6,
@@ -108,6 +113,30 @@ def save(fig: plt.Figure, name: str, _caption: str, _description: str) -> None:
     print(f"created {path}")
 
 
+def pick(row: dict[str, str], *names: str) -> str:
+    for name in names:
+        if name in row:
+            return row[name]
+    raise KeyError(f"missing any of columns {names}")
+
+
+def load_benchmark_raw_points() -> dict[str, dict[int, dict[str, list[float]]]]:
+    if not EXP1_SUMMARY.exists():
+        return {}
+    summary = json.loads(EXP1_SUMMARY.read_text(encoding="utf-8"))
+    points: dict[str, dict[int, dict[str, list[float]]]] = {}
+    for engine, by_node in summary.items():
+        algo = algo_name(engine.replace("_", "-"))
+        for node_text, stats in by_node.items():
+            node = int(node_text)
+            metrics = points.setdefault(algo, {}).setdefault(node, {"tps": [], "p99": []})
+            for item in stats.get("raw", []):
+                raw_metrics = item.get("metrics", {})
+                metrics["tps"].append(float(raw_metrics.get("tps", 0.0)))
+                metrics["p99"].append(float(raw_metrics.get("p99_ms", 0.0)))
+    return points
+
+
 def plot_load_pattern(rows: list[dict[str, str]]) -> None:
     grouped: dict[str, dict[str, dict[str, str]]] = {}
     for row in rows:
@@ -119,15 +148,16 @@ def plot_load_pattern(rows: list[dict[str, str]]) -> None:
     zipf_p99 = [parse_mean(grouped[a]["Zipf"]["P99(ms)"]) for a in algos]
     x = np.arange(len(algos))
     w = 0.36
+    bw = w * 2 / 3
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
-    axes[0].bar(x - w / 2, uniform_tps, w, label="Uniform", color="#5B8DB8")
-    axes[0].bar(x + w / 2, zipf_tps, w, label="Zipf", color="#D9802E")
+    axes[0].bar(x - w / 2, uniform_tps, bw, label="Uniform", color="#5B8DB8")
+    axes[0].bar(x + w / 2, zipf_tps, bw, label="Zipf", color="#D9802E")
     axes[0].set_title("负载模式对TPS的影响")
     axes[0].set_ylabel("TPS (tx/s)")
     axes[0].set_xticks(x, algos, rotation=18, ha="right")
     axes[0].legend()
-    axes[1].bar(x - w / 2, uniform_p99, w, label="Uniform", color="#5B8DB8")
-    axes[1].bar(x + w / 2, zipf_p99, w, label="Zipf", color="#D9802E")
+    axes[1].bar(x - w / 2, uniform_p99, bw, label="Uniform", color="#5B8DB8")
+    axes[1].bar(x + w / 2, zipf_p99, bw, label="Zipf", color="#D9802E")
     axes[1].set_title("负载模式对P99的影响")
     axes[1].set_ylabel("P99 (ms)")
     axes[1].set_xticks(x, algos, rotation=18, ha="right")
@@ -145,8 +175,8 @@ def plot_comet(rows: list[dict[str, str]]) -> None:
     nodes = [8, 16, 32]
     fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8))
     for algo in ["CometBFT", "CometBFT-light"]:
-        axes[0].plot(nodes, [data[algo][n]["tps"] for n in nodes], marker="o", lw=2.2, label=algo, color=COLORS.get(algo))
-        axes[1].plot(nodes, [data[algo][n]["p99"] for n in nodes], marker="o", lw=2.2, label=algo, color=COLORS.get(algo))
+        axes[0].plot(nodes, [data[algo][n]["tps"] for n in nodes], marker="o", ls=":", lw=2.2, label=algo, color=COLORS.get(algo))
+        axes[1].plot(nodes, [data[algo][n]["p99"] for n in nodes], marker="o", ls=":", lw=2.2, label=algo, color=COLORS.get(algo))
     axes[0].set_title("CometBFT与CometBFT-light TPS")
     axes[0].set_xlabel("节点数 N")
     axes[0].set_ylabel("TPS (tx/s)")
@@ -178,8 +208,8 @@ def plot_benchmark(data: dict[str, dict[int, dict[str, float]]]) -> None:
     nodes = [8, 16, 32]
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
     for algo in ALGO_ORDER:
-        axes[0].plot(nodes, [data[algo][n]["tps"] for n in nodes], marker="o", lw=2.2, label=algo, color=COLORS.get(algo))
-        axes[1].plot(nodes, [data[algo][n]["p99"] for n in nodes], marker="o", lw=2.2, label=algo, color=COLORS.get(algo))
+        axes[0].plot(nodes, [data[algo][n]["tps"] for n in nodes], marker="o", ls=":", lw=2.2, label=algo, color=COLORS.get(algo))
+        axes[1].plot(nodes, [data[algo][n]["p99"] for n in nodes], marker="o", ls=":", lw=2.2, label=algo, color=COLORS.get(algo))
     axes[0].set_title("基准实验TPS随节点规模变化")
     axes[0].set_xlabel("节点数 N")
     axes[0].set_ylabel("TPS (tx/s)")
@@ -189,6 +219,7 @@ def plot_benchmark(data: dict[str, dict[int, dict[str, float]]]) -> None:
     axes[1].axhline(200, color="#777777", lw=1, ls=":")
     for ax in axes:
         ax.set_xticks(nodes)
+        ax.grid(False)
         ax.legend(ncol=2)
     fig.tight_layout()
     save(fig, "fig3_3_benchmark_tps_p99_nodes.png", "图3-3 基准实验TPS与P99随节点规模变化", "基于表3-5绘制。")
@@ -201,9 +232,10 @@ def plot_latency(data: dict[str, dict[int, dict[str, float]]]) -> None:
         algos = ALGO_ORDER
         x = np.arange(len(algos))
         w = 0.24
-        axes[i].bar(x - w, [data[a][n]["p50"] for a in algos], w, label="P50", color="#8AB6D6")
-        axes[i].bar(x, [data[a][n]["p95"] for a in algos], w, label="P95", color="#F2B880")
-        axes[i].bar(x + w, [data[a][n]["p99"] for a in algos], w, label="P99", color="#C44E52")
+        bw = w * 2 / 3
+        axes[i].bar(x - w, [data[a][n]["p50"] for a in algos], bw, label="P50", color="#8AB6D6")
+        axes[i].bar(x, [data[a][n]["p95"] for a in algos], bw, label="P95", color="#F2B880")
+        axes[i].bar(x + w, [data[a][n]["p99"] for a in algos], bw, label="P99", color="#C44E52")
         axes[i].set_title(f"N={n}")
         axes[i].set_xticks(x, algos, rotation=24, ha="right")
         axes[i].axhline(200, color="#777777", lw=1, ls=":")
@@ -225,14 +257,14 @@ def plot_p99_3d(data: dict[str, dict[int, dict[str, float]]]) -> None:
         xs = np.array(nodes)
         ys = np.full(len(nodes), y)
         zs = np.array([data[algo][n]["p99"] for n in nodes])
-        ax.plot(xs, ys, zs, marker="o", lw=2.3, color=COLORS.get(algo), label=algo)
+        ax.plot(xs, ys, zs, marker="o", ls=":", lw=2.3, color=COLORS.get(algo), label=algo)
         ax.scatter(xs, ys, zs, s=46, color=COLORS.get(algo), depthshade=True)
 
     ax.set_title("P99延迟-节点数-算法三维分布")
     ax.set_xlabel("节点数 N")
     ax.set_ylabel("共识算法")
     ax.set_zlabel("P99延迟 (ms)")
-    ax.set_xticks(nodes)
+    ax.set_xticks([8, 16, 24, 32])
     ax.set_yticks(range(len(algos)))
     ax.set_yticklabels(algos)
     ax.view_init(elev=24, azim=-55)
@@ -244,11 +276,12 @@ def plot_degradation(rows: list[dict[str, str]]) -> None:
     algos = [row["算法"] for row in rows]
     vals = [parse_mean(row["Rdeg (%)"]) for row in rows]
     fig, ax = plt.subplots(figsize=(8.8, 4.8))
-    bars = ax.bar(algos, vals, color=[COLORS.get(a, "#777777") for a in algos])
+    bars = ax.bar(algos, vals, width=BAR_WIDTH_2_3, color=[COLORS.get(a, "#777777") for a in algos])
     ax.set_title("8至32节点TPS规模退化率")
     ax.set_ylabel("Rdeg (%)")
     ax.set_ylim(0, max(vals) * 1.18)
     ax.set_xticks(np.arange(len(algos)), algos, rotation=18, ha="right")
+    ax.grid(False)
     for bar, val in zip(bars, vals):
         ax.text(bar.get_x() + bar.get_width() / 2, val + 1, f"{val:.1f}%", ha="center", fontsize=9)
     fig.tight_layout()
@@ -260,7 +293,7 @@ def plot_saturation(rows: list[dict[str, str]]) -> None:
     fig, ax = plt.subplots(figsize=(9.2, 5.2))
     for row in rows:
         algo = row["算法\\lambda"]
-        ax.plot(lambdas, [parse_mean(row[str(v)]) for v in lambdas], marker="o", lw=2.1, label=algo, color=COLORS.get(algo))
+        ax.plot(lambdas, [parse_mean(row[str(v)]) for v in lambdas], marker="o", ls=":", lw=2.1, label=algo, color=COLORS.get(algo))
     ax.set_title("负载强度扫描下的吞吐饱和趋势")
     ax.set_xlabel("负载强度 λ (tx/s)")
     ax.set_ylabel("TPS (tx/s)")
@@ -278,8 +311,8 @@ def plot_group(rows: list[dict[str, str]], comp: list[dict[str, str]]) -> None:
     errors = [parse_mean(row["相对误差"]) for row in comp]
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
     twin = axes[0].twinx()
-    axes[0].plot(ks, tps, marker="o", lw=2.2, color="#4E9A62", label="TPS")
-    twin.plot(ks, p99, marker="s", lw=2.2, color="#C44E52", label="P99")
+    axes[0].plot(ks, tps, marker="o", ls=":", lw=2.2, color="#4E9A62", label="TPS")
+    twin.plot(ks, p99, marker="s", ls=":", lw=2.2, color="#C44E52", label="P99")
     axes[0].set_title("分组数K对TPS与P99的影响")
     axes[0].set_xlabel("分组数 K")
     axes[0].set_ylabel("TPS (tx/s)")
@@ -288,8 +321,8 @@ def plot_group(rows: list[dict[str, str]], comp: list[dict[str, str]]) -> None:
     h1, l1 = axes[0].get_legend_handles_labels()
     h2, l2 = twin.get_legend_handles_labels()
     axes[0].legend(h1 + h2, l1 + l2)
-    axes[1].plot(ks, theoretical, marker="o", lw=2.0, label="理论消息数", color="#5B8DB8")
-    axes[1].plot(ks, measured, marker="s", lw=2.0, label="实测消息数", color="#D9802E")
+    axes[1].plot(ks, theoretical, marker="o", ls=":", lw=2.0, label="理论消息数", color="#5B8DB8")
+    axes[1].plot(ks, measured, marker="s", ls=":", lw=2.0, label="实测消息数", color="#D9802E")
     for k, err, y in zip(ks, errors, measured):
         axes[1].text(k, y + max(measured) * 0.03, f"{err:.1f}%", ha="center", fontsize=8)
     axes[1].set_title("理论消息数与实测消息数对比")
@@ -305,15 +338,16 @@ def plot_ablation(rows: list[dict[str, str]]) -> None:
     groups = [row["组别"][0] for row in rows]
     x = np.arange(len(groups))
     w = 0.36
+    bw = w * 2 / 3
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
-    axes[0].bar(x - w / 2, [parse_mean(r["16节点TPS"]) for r in rows], w, label="N=16", color="#5B8DB8")
-    axes[0].bar(x + w / 2, [parse_mean(r["32节点TPS"]) for r in rows], w, label="N=32", color="#4E9A62")
+    axes[0].bar(x - w / 2, [parse_mean(r["16节点TPS"]) for r in rows], bw, label="N=16", color="#5B8DB8")
+    axes[0].bar(x + w / 2, [parse_mean(r["32节点TPS"]) for r in rows], bw, label="N=32", color="#4E9A62")
     axes[0].set_title("消融配置TPS对比")
     axes[0].set_ylabel("TPS (tx/s)")
     axes[0].set_xticks(x, groups)
     axes[0].legend()
-    axes[1].bar(x - w / 2, [parse_mean(r["16节点P99"]) for r in rows], w, label="N=16", color="#F2B880")
-    axes[1].bar(x + w / 2, [parse_mean(r["32节点P99"]) for r in rows], w, label="N=32", color="#C44E52")
+    axes[1].bar(x - w / 2, [parse_mean(r["16节点P99"]) for r in rows], bw, label="N=16", color="#F2B880")
+    axes[1].bar(x + w / 2, [parse_mean(r["32节点P99"]) for r in rows], bw, label="N=32", color="#C44E52")
     axes[1].set_title("消融配置P99对比")
     axes[1].set_ylabel("P99 (ms)")
     axes[1].set_xticks(x, groups)
@@ -329,16 +363,17 @@ def plot_scores(algo_rows: list[dict[str, str]], opt_rows: list[dict[str, str]])
     groups = [r["实验组"] for r in opt_rows]
     opt_scores = [parse_mean(r["综合评分S"]) for r in opt_rows]
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8))
-    axes[0].bar(labels, scores, color=[COLORS.get(a, "#777777") for a in labels])
+    axes[0].bar(labels, scores, width=BAR_WIDTH_2_3, color=[COLORS.get(a, "#777777") for a in labels])
     axes[0].set_title("算法配置维度PB-CPBQ评分")
     axes[0].set_ylabel("综合评分 S")
     axes[0].set_ylim(0, 1.05)
     axes[0].set_xticks(np.arange(len(labels)), labels, rotation=20, ha="right")
-    axes[1].bar(groups, opt_scores, color=[COLORS.get(g, "#777777") for g in groups])
+    axes[1].bar(groups, opt_scores, width=BAR_WIDTH_2_3, color=[COLORS.get(g, "#777777") for g in groups])
     axes[1].set_title("优化组件维度PB-CPBQ评分")
     axes[1].set_ylabel("综合评分 S")
     axes[1].set_ylim(0, 1.05)
     for ax in axes:
+        ax.grid(False)
         for patch in ax.patches:
             value = patch.get_height()
             ax.text(patch.get_x() + patch.get_width() / 2, value + 0.025, f"{value:.3f}", ha="center", fontsize=9)
@@ -346,10 +381,63 @@ def plot_scores(algo_rows: list[dict[str, str]], opt_rows: list[dict[str, str]])
     save(fig, "fig3_10_pb_cpbq_scores.png", "图3-10 PB-CPBQ边界向量综合评分", "基于表3-19和表3-20绘制。")
 
 
+def plot_tsat_fit(rows: list[dict[str, str]], raw_points: dict[str, dict[int, dict[str, list[float]]]]) -> None:
+    nodes = np.array([8, 16, 32], dtype=float)
+    xfit = np.linspace(8, 32, 160)
+    fig, ax = plt.subplots(figsize=(9.4, 5.4))
+
+    for row in rows:
+        algo = row["算法"]
+        alpha = parse_mean(pick(row, "α_A", "alpha", "截距"))
+        beta = parse_mean(pick(row, "β_A", "beta", "斜率"))
+        color = COLORS.get(algo, "#777777")
+        ax.plot(xfit, alpha + beta * xfit, ls="-", lw=2.2, color=color, label=f"{algo} 拟合")
+        for node in nodes.astype(int):
+            values = raw_points.get(algo, {}).get(node, {}).get("tps", [])
+            offsets = np.linspace(-0.28, 0.28, len(values)) if values else []
+            ax.scatter(node + offsets, values, s=34, color=color, alpha=0.76, edgecolor="white", linewidth=0.6, zorder=3)
+
+    ax.set_title("吞吐量饱和边界拟合")
+    ax.set_xlabel("节点数 N")
+    ax.set_ylabel("T_sat (tx/s)")
+    ax.set_xticks([8, 16, 24, 32])
+    ax.legend(ncol=2)
+    fig.tight_layout()
+    save(fig, "fig3_11_tsat_fit_scatter.png", "图3-11 吞吐量饱和边界拟合曲线与散点", "基于表3-17绘制。")
+
+
+def plot_p99_fit(rows: list[dict[str, str]], raw_points: dict[str, dict[int, dict[str, list[float]]]]) -> None:
+    nodes = np.array([8, 16, 32], dtype=float)
+    xfit = np.linspace(8, 64, 220)
+    fig, ax = plt.subplots(figsize=(9.4, 5.4))
+    for row in rows:
+        algo = row["算法"]
+        alpha = parse_mean(pick(row, "alpha", "α"))
+        beta = parse_mean(pick(row, "beta", "β"))
+        gamma = parse_mean(pick(row, "gamma", "γ"))
+        color = COLORS.get(algo, "#777777")
+        yfit = alpha * xfit**2 + beta * xfit + gamma
+        ax.plot(xfit, yfit, ls="-", lw=2.1, color=color, label=f"{algo} 拟合")
+        for node in nodes.astype(int):
+            values = raw_points.get(algo, {}).get(node, {}).get("p99", [])
+            offsets = np.linspace(-0.28, 0.28, len(values)) if values else []
+            ax.scatter(node + offsets, values, s=34, color=color, alpha=0.76, edgecolor="white", linewidth=0.6, zorder=3)
+
+    ax.axhline(2000, color="#777777", lw=1.0, ls=":")
+    ax.set_title("P99尾延迟退化模型拟合")
+    ax.set_xlabel("节点数 N")
+    ax.set_ylabel("P99 (ms)")
+    ax.set_xticks([8, 16, 24, 32, 48, 64])
+    ax.legend(ncol=2)
+    fig.tight_layout()
+    save(fig, "fig3_12_p99_fit_scatter.png", "图3-12 P99尾延迟拟合曲线与散点", "基于表3-18绘制。")
+
+
 def main() -> None:
     setup_style()
     clean_outputs()
     md = SUMMARY.read_text(encoding="utf-8")
+    raw_points = load_benchmark_raw_points()
     tables = {f"3-{i}": extract_table(md, f"3-{i}") for i in range(3, 21)}
     plot_load_pattern(tables["3-3"])
     plot_comet(tables["3-4"])
@@ -362,6 +450,8 @@ def main() -> None:
     plot_group(tables["3-8"], tables["3-9"])
     plot_ablation(tables["3-10"])
     plot_scores(tables["3-19"], tables["3-20"])
+    plot_tsat_fit(tables["3-15"], raw_points)
+    plot_p99_fit(tables["3-16"], raw_points)
 
 
 if __name__ == "__main__":
