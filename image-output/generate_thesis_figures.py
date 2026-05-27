@@ -304,11 +304,12 @@ def plot_saturation(rows: list[dict[str, str]]) -> None:
 
 def plot_group(rows: list[dict[str, str]], comp: list[dict[str, str]]) -> None:
     ks = [int(parse_mean(row["K（分组数）"])) for row in rows]
+    ms = [int(parse_mean(row["M=32/K"])) for row in rows]
     tps = [parse_mean(row["TPS (tx/s)"]) for row in rows]
     p99 = [parse_mean(row["P99 (ms)"]) for row in rows]
     measured = [parse_mean(row["实测消息数每轮"]) for row in rows]
-    theoretical = [parse_mean(row["理论消息数O(KM²+K²)"]) for row in rows]
-    errors = [parse_mean(row["相对误差"]) for row in comp]
+    theoretical = [k * m * m + k * k for k, m in zip(ks, ms)]
+    errors = [abs(actual - theory) / theory * 100 if theory else 0 for actual, theory in zip(measured, theoretical)]
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
     twin = axes[0].twinx()
     axes[0].plot(ks, tps, marker="o", ls=":", lw=2.2, color="#4E9A62", label="TPS")
@@ -324,7 +325,7 @@ def plot_group(rows: list[dict[str, str]], comp: list[dict[str, str]]) -> None:
     axes[1].plot(ks, theoretical, marker="o", ls=":", lw=2.0, label="理论消息数", color="#5B8DB8")
     axes[1].plot(ks, measured, marker="s", ls=":", lw=2.0, label="实测消息数", color="#D9802E")
     for k, err, y in zip(ks, errors, measured):
-        axes[1].text(k, y + max(measured) * 0.03, f"{err:.1f}%", ha="center", fontsize=8)
+        axes[1].text(k, y + max(measured) * 0.03, f"{err:.2f}%", ha="center", fontsize=8)
     axes[1].set_title("理论消息数与实测消息数对比")
     axes[1].set_xlabel("分组数 K")
     axes[1].set_ylabel("消息数")
