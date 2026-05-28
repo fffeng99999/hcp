@@ -106,9 +106,9 @@ def extract_table(markdown: str, number: str) -> list[dict[str, str]]:
     return rows
 
 
-def save(fig: plt.Figure, name: str, _caption: str, _description: str) -> None:
+def save(fig: plt.Figure, name: str, _caption: str, _description: str, *, pad_inches: float = 0.1) -> None:
     path = OUT_DIR / name
-    fig.savefig(path, dpi=300, bbox_inches="tight")
+    fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=pad_inches)
     plt.close(fig)
     print(f"created {path}")
 
@@ -250,7 +250,7 @@ def plot_latency(data: dict[str, dict[int, dict[str, float]]]) -> None:
 def plot_p99_3d(data: dict[str, dict[int, dict[str, float]]]) -> None:
     nodes = [8, 16, 32]
     algos = ALGO_ORDER
-    fig = plt.figure(figsize=(10.5, 7.2))
+    fig = plt.figure(figsize=(10.8, 7.4))
     ax = fig.add_subplot(111, projection="3d")
 
     for y, algo in enumerate(algos):
@@ -261,15 +261,17 @@ def plot_p99_3d(data: dict[str, dict[int, dict[str, float]]]) -> None:
         ax.scatter(xs, ys, zs, s=46, color=COLORS.get(algo), depthshade=True)
 
     ax.set_title("P99延迟-节点数-算法三维分布")
-    ax.set_xlabel("节点数 N")
-    ax.set_ylabel("共识算法")
-    ax.set_zlabel("P99延迟 (ms)")
+    ax.set_xlabel("节点数 N", labelpad=12)
+    ax.set_ylabel("共识算法", labelpad=12)
+    ax.set_zlabel("P99延迟 (ms)", labelpad=2)
     ax.set_xticks([8, 16, 24, 32])
     ax.set_yticks(range(len(algos)))
     ax.set_yticklabels(algos)
-    ax.view_init(elev=24, azim=-55)
+    ax.view_init(elev=23, azim=-50)
+    ax.set_box_aspect((1.35, 1.0, 0.9))
+    fig.subplots_adjust(left=0.04, right=0.96, bottom=0.07, top=0.91)
     ax.legend(loc="upper left", bbox_to_anchor=(0.02, 0.98))
-    save(fig, "fig3_5_p99_3d_latency_distribution.png", "图3-5 P99延迟-节点数-算法三维分布", "基于表3-5绘制。")
+    save(fig, "fig3_5_p99_3d_latency_distribution.png", "图3-5 P99延迟-节点数-算法三维分布", "基于表3-5绘制。", pad_inches=0.25)
 
 
 def plot_degradation(rows: list[dict[str, str]]) -> None:
