@@ -13,7 +13,7 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[2]
-REPORT_DIR = ROOT / "hcp-lab" / "experiments" / "exp7_extended_fit" / "report"
+REPORT_DIR = ROOT / "hcap-lab" / "experiments" / "exp7_extended_fit" / "report"
 SUMMARY_PATH = REPORT_DIR / "summary.json"
 FIT_PATH = REPORT_DIR / "fit_summary.json"
 OUT_DIR = Path(__file__).resolve().parent / "chapter3_extended_fit"
@@ -203,7 +203,7 @@ def write_manifest() -> None:
             [
                 "# Chapter 3.7 Extended Fit Figures",
                 "",
-                "Source: hcp-lab/experiments/exp7_extended_fit/report/summary.json",
+                "Source: hcap-lab/experiments/exp7_extended_fit/report/summary.json",
                 "",
                 "Generated files:",
                 "- fig3_11_extended_tsat_fit_scatter.png",
@@ -211,7 +211,7 @@ def write_manifest() -> None:
                 "- extended_fit_raw_points.csv",
                 "- extended_fit_summary_used.json",
                 "",
-                "This directory is separate from hcp/image-output/chapter3 and does not overwrite original figures or data.",
+                "This directory is separate from hcap/image-output/chapter3 and does not overwrite original figures or data.",
             ]
         )
         + "\n",

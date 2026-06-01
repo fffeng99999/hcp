@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate thesis figures from hcp-lab/experiments/report/summary_all.md."""
+"""Generate thesis figures from hcap-lab/experiments/report/summary_all.md."""
 from __future__ import annotations
 
 import re
@@ -12,8 +12,8 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SUMMARY = ROOT / "hcp-lab" / "experiments" / "report" / "summary_all.md"
-EXP1_SUMMARY = ROOT / "hcp-lab" / "experiments" / "exp1_benchmark" / "report" / "summary.json"
+SUMMARY = ROOT / "hcap-lab" / "experiments" / "report" / "summary_all.md"
+EXP1_SUMMARY = ROOT / "hcap-lab" / "experiments" / "exp1_benchmark" / "report" / "summary.json"
 OUT_DIR = Path(__file__).resolve().parent / "chapter3"
 
 ALGO_ORDER = ["PBFT", "HotStuff", "Raft", "CometBFT-light", "tPBFT"]

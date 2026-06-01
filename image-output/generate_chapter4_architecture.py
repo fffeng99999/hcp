@@ -201,7 +201,7 @@ def fig1() -> None:
     ]:
         chip(d, (x, 980), label, color, fill)
     box(d, (210, 1040, 1590, 1125), "设计原则", ["自研算法共享同一负载入口和统计链路；官方CometBFT作为独立工程基线，不与轻量实现混跑"], GRAY_L, GRAY)
-    save(img, "fig4_1_hcp_bench_overall_architecture.png")
+    save(img, "fig4_1_hcap_bench_overall_architecture.png")
 
 
 def fig2() -> None:
