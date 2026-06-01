@@ -102,7 +102,7 @@ flowchart TB
   A["HCAP-Lab读取实验矩阵<br/>engine、nodes、txs、mode、groups、repeat、protocol"] --> B["准备运行环境<br/>二进制、端口、节点目录、账户文件、数据库schema"]
   B --> C{"选择执行路径"}
 
-  C -- "轻量共识算法模块路径" --> D["启动 hcp-bench serve<br/>HTTP /tx、/status<br/>同时启动QUIC监听"]
+  C -- "轻量共识算法模块路径" --> D["启动 hcap-bench serve<br/>HTTP /tx、/status<br/>同时启动QUIC监听"]
   C -- "官方CometBFT对照路径" --> E["启动官方CometBFT + Cosmos SDK节点<br/>多进程节点、RPC/gRPC入口"]
 
   D --> F["等待共识入口可用<br/>health/status/端口检查"]
@@ -230,7 +230,7 @@ flowchart TB
   end
 
   subgraph Light["轻量共识算法模块路径"]
-    L1 --> L2["hcp-bench serve / benchmark"]
+    L1 --> L2["hcap-bench serve / benchmark"]
     L2 --> L3["统一engine factory"]
     L3 --> L4["统一本地多节点模拟网络"]
     L4 --> L5["CometBFT-light或其他轻量算法"]
@@ -284,7 +284,7 @@ flowchart LR
   subgraph Broadcast["协议广播层"]
     HTTP["HTTP Broadcaster<br/>POST /tx、连接池复用"]
     GRPC["gRPC Broadcaster<br/>Cosmos BroadcastTx<br/>Async / Sync / Block"]
-    QUIC["QUIC Broadcaster<br/>quinn双向流、hcp-quic ALPN、OK/ERR响应"]
+    QUIC["QUIC Broadcaster<br/>quinn双向流、hcap-quic ALPN、OK/ERR响应"]
   end
 
   subgraph Observe["观测与持久化层"]
@@ -345,7 +345,7 @@ flowchart TB
   Prepare --> Loop["按实验点顺序执行"]
 
   Loop --> Path{"运行路径"}
-  Path -- "轻量共识算法模块" --> StartBench["启动 hcp-bench<br/>serve模式、HTTP与QUIC监听、/status"]
+  Path -- "轻量共识算法模块" --> StartBench["启动 hcap-bench<br/>serve模式、HTTP与QUIC监听、/status"]
   Path -- "官方CometBFT" --> StartComet["启动官方CometBFT/Cosmos SDK<br/>多进程节点、RPC/gRPC入口"]
 
   StartBench --> Health["健康检查<br/>端口、/health、/status、进程状态"]
@@ -625,15 +625,15 @@ sequenceDiagram
   participant Lab as HCAP-Lab
   participant Loadgen as HCAP-Loadgen
   participant QB as QuicBroadcaster
-  participant Bench as hcp-bench QUIC Listener
+  participant Bench as hcap-bench QUIC Listener
   participant Engine as 轻量共识算法模块
   participant Exec as SDK执行适配层
   participant Store as 指标与结果存储
 
-  Lab->>Bench: 启动 hcp-bench serve，同端口监听HTTP与QUIC
+  Lab->>Bench: 启动 hcap-bench serve，同端口监听HTTP与QUIC
   Lab->>Loadgen: --protocol quic --quic-endpoint 127.0.0.1:port
   Loadgen->>QB: 创建QUIC客户端Endpoint
-  QB->>Bench: 建立QUIC连接，ALPN=hcp-quic
+  QB->>Bench: 建立QUIC连接，ALPN=hcap-quic
   loop 每笔交易或并发worker
     Loadgen->>QB: 传入已编码SDK交易字节
     QB->>Bench: 打开双向流并写入payload
